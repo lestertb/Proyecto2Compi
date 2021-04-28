@@ -1,2 +1,4 @@
 int MAX;
+char x;
 MAX = 10;
+x= "a";
