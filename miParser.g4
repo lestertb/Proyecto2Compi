@@ -51,7 +51,7 @@ factor            : literal                                                 #lit
                   | arrayLength                                             #arrayLengthFAST
                   | subExpression                                           #subExpressionFAST
                   | arrayAllocationExpression                               #arrayAllocationExpressionFAST
-                  | allocationExpression                                    #arrayAllocationExpressionFAST
+                  | allocationExpression                                    #allocationExpressionFAST
                   | unary                                                   #unaryFAST;
 unary             : UNARY (expression)*                                     #unaryAST;
 allocationExpression    : NEW ID  PIZQ PDER                                 #allocationExpressionAST;

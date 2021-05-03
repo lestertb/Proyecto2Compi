@@ -1719,9 +1719,6 @@ public class miParser extends Parser {
 		public ArrayAllocationExpressionContext arrayAllocationExpression() {
 			return getRuleContext(ArrayAllocationExpressionContext.class,0);
 		}
-		public AllocationExpressionContext allocationExpression() {
-			return getRuleContext(AllocationExpressionContext.class,0);
-		}
 		public ArrayAllocationExpressionFASTContext(FactorContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
@@ -1794,6 +1791,17 @@ public class miParser extends Parser {
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof miParserVisitor ) return ((miParserVisitor<? extends T>)visitor).visitArrayLengthFAST(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class AllocationExpressionFASTContext extends FactorContext {
+		public AllocationExpressionContext allocationExpression() {
+			return getRuleContext(AllocationExpressionContext.class,0);
+		}
+		public AllocationExpressionFASTContext(FactorContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof miParserVisitor ) return ((miParserVisitor<? extends T>)visitor).visitAllocationExpressionFAST(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1875,7 +1883,7 @@ public class miParser extends Parser {
 				}
 				break;
 			case 8:
-				_localctx = new ArrayAllocationExpressionFASTContext(_localctx);
+				_localctx = new AllocationExpressionFASTContext(_localctx);
 				enterOuterAlt(_localctx, 8);
 				{
 				setState(232);

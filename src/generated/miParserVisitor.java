@@ -305,6 +305,13 @@ public interface miParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArrayAllocationExpressionFAST(miParser.ArrayAllocationExpressionFASTContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code allocationExpressionFAST}
+	 * labeled alternative in {@link miParser#factor}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAllocationExpressionFAST(miParser.AllocationExpressionFASTContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code unaryFAST}
 	 * labeled alternative in {@link miParser#factor}.
 	 * @param ctx the parse tree
