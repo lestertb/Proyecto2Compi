@@ -5,21 +5,25 @@ import generated.miParserBaseVisitor;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-public class MiVisitor<Object> extends miParserBaseVisitor<Object> {
+public class MiVisitor extends miParserBaseVisitor<Object> {
 
     private TablaSimbolos tabla;
-    /*
+
     public MiVisitor() {
         tabla = new TablaSimbolos();
-    }*/
+    }
 
     @Override public Object visitProgramAST(miParser.ProgramASTContext ctx) {
-        for( miParser.StatementContext context : ctx.statement())
+        for( miParser.StatementContext context : ctx.statement()) {
             this.visit(context);
+        }
+        tabla.imprimir();
+        tabla.closeScope();
         return null;
     }
 
     @Override public Object visitVariableDeclarationST(miParser.VariableDeclarationSTContext ctx) {
+        tabla.openScope();
         this.visit(ctx.variableDeclaration());
         return null;
     }
@@ -124,32 +128,20 @@ public class MiVisitor<Object> extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitClassVariableDeclarationAST(miParser.ClassVariableDeclarationASTContext ctx) {
-        this.visit(ctx.expression());
         return null;
     }
 
     @Override public Object visitVariableDeclarationAST(miParser.VariableDeclarationASTContext ctx) {
-        this.visit(ctx.type());
-        if (ctx.expression() != null)
-            this.visit(ctx.expression());
-       /*
-        miParser.SimpleTypeTASTContext idToken = ((miParser.SimpleTypeTASTContext) this.visit(ctx.type()));
-        System.out.println(idToken);
-        Ident id = tabla.buscar(idToken.getText());
-        if (id != null){
-            try {
-                Object exprType = this.visit(ctx.expression());
-                System.out.println(id.type);
-                System.out.println(exprType);
-            }catch (RuntimeException e){
-                System.out.println("Error de asignación");
-            }
-        }*/
+        Object attr = this.visit(ctx.type());
+
+        if(attr != null){
+            tabla.insertar(ctx.ID().getSymbol(), (Type) attr,ctx);
+        }
         return null;
     }
 
     @Override public Object visitSimpleTypeTAST(miParser.SimpleTypeTASTContext ctx) {
-        return null;
+        return this.visit(ctx.simpleType());
     }
 
     @Override public Object visitArrayTypeTAST(miParser.ArrayTypeTASTContext ctx) {
@@ -165,7 +157,9 @@ public class MiVisitor<Object> extends miParserBaseVisitor<Object> {
 
     @Override public Object visitCharSTAST(miParser.CharSTASTContext ctx) { return null; }
 
-    @Override public Object visitIntSTAST(miParser.IntSTASTContext ctx) { return null; }
+    @Override public Object visitIntSTAST(miParser.IntSTASTContext ctx) {
+        return Type.INT;
+    }
 
     @Override public Object visitStringSTAST(miParser.StringSTASTContext ctx) {
         return super.visitStringSTAST(ctx);
@@ -207,7 +201,9 @@ public class MiVisitor<Object> extends miParserBaseVisitor<Object> {
         return null;
     }
 
-    @Override public Object visitIdFAST(miParser.IdFASTContext ctx) { return null; }
+    @Override public Object visitIdFAST(miParser.IdFASTContext ctx) {
+        return null;
+    }
 
     @Override public Object visitFunctionCallFAST(miParser.FunctionCallFASTContext ctx) {
         this.visit(ctx.functionCall());
@@ -251,7 +247,6 @@ public class MiVisitor<Object> extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitAllocationExpressionAST(miParser.AllocationExpressionASTContext ctx) {
-
         return null;
     }
 
@@ -285,7 +280,9 @@ public class MiVisitor<Object> extends miParserBaseVisitor<Object> {
 
     @Override public Object visitBoolLiteral(miParser.BoolLiteralContext ctx) { return null; }
 
-    @Override public Object visitIntLAST(miParser.IntLASTContext ctx) { return null; }
+    @Override public Object visitIntLAST(miParser.IntLASTContext ctx) {
+        return Type.INT;
+    }
 
     @Override public Object visitRealLAST(miParser.RealLASTContext ctx) { return null; }
 
