@@ -1,5 +1,3 @@
-int MAX = 10;
-int test1 = 20;
-int test2 = 30;
-int test3 = 40;
-int test4 = 50;
+int MAX = "hola";
+
+

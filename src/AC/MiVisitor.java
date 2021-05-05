@@ -5,6 +5,8 @@ import generated.miParserBaseVisitor;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.sql.SQLOutput;
+
 public class MiVisitor extends miParserBaseVisitor<Object> {
 
     private TablaSimbolos tabla;
@@ -14,6 +16,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitProgramAST(miParser.ProgramASTContext ctx) {
+        tabla.openScope();
         for( miParser.StatementContext context : ctx.statement()) {
             this.visit(context);
         }
@@ -23,7 +26,6 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitVariableDeclarationST(miParser.VariableDeclarationSTContext ctx) {
-        tabla.openScope();
         this.visit(ctx.variableDeclaration());
         return null;
     }
@@ -133,10 +135,10 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
     @Override public Object visitVariableDeclarationAST(miParser.VariableDeclarationASTContext ctx) {
         Object attr = this.visit(ctx.type());
-
         if(attr != null){
             tabla.insertar(ctx.ID().getSymbol(), (Type) attr,ctx);
         }
+        this.visit(ctx.expression());
         return null;
     }
 
@@ -150,7 +152,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitIdTAST(miParser.IdTASTContext ctx) {
-        return null;
+        return ctx.ID();
     }
 
     @Override public Object visitBooleanSTAST(miParser.BooleanSTASTContext ctx) { return null; }
@@ -168,6 +170,11 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     @Override public Object visitArrayTypeAST(miParser.ArrayTypeASTContext ctx) { return null; }
 
     @Override public Object visitAssignmentAST(miParser.AssignmentASTContext ctx) {
+        Ident id = tabla.buscar(ctx.ID().get(0).toString());
+        if (id == null){
+            System.out.println("\""+ctx.ID().get(0).toString()+"\" no ha sido declarado");
+            //throw new RuntimeException();
+        }
         visit(ctx.expression());
         return null;
     }
@@ -179,26 +186,38 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitExpressionAST(miParser.ExpressionASTContext ctx) {
-        for (miParser.SimpleExpressionContext c: ctx.simpleExpression())
-            this.visit(c);
+        Type exprType;
+        Type exprType2 = null;
+        exprType = (Type) this.visit(ctx.simpleExpression(0));
+        for (int i = 1; i <ctx.simpleExpression().size() ; i++) {
+            exprType2 = (Type) this.visit(ctx.simpleExpression(i));
+            if(exprType != exprType2)
+                System.out.println("Error tipos incompatibles");
+        }
+        System.out.println("----------------");
+        System.out.println(exprType);
+        System.out.println(exprType2);
+        System.out.println("----------------");
         return null;
     }
 
     @Override public Object visitSimpleExpressionAST(miParser.SimpleExpressionASTContext ctx) {
-        for (miParser.TermContext c: ctx.term())
+        for (miParser.TermContext c: ctx.term()){
             this.visit(c);
+        }
         return null;
     }
 
     @Override public Object visitTermAST(miParser.TermASTContext ctx) {
-        for (miParser.FactorContext c: ctx.factor())
+        for (miParser.FactorContext c: ctx.factor()){
             this.visit(c);
-        return null;
+        }
+        return ctx;
     }
 
     @Override public Object visitLiteralFAST(miParser.LiteralFASTContext ctx) {
-        this.visit(ctx.literal());
-        return null;
+        System.out.println(this.visit(ctx.literal()));
+        return this.visit(ctx.literal());
     }
 
     @Override public Object visitIdFAST(miParser.IdFASTContext ctx) {
@@ -288,5 +307,5 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
     @Override public Object visitBoolLAST(miParser.BoolLASTContext ctx) { return null; }
 
-    @Override public Object visitStringLAST(miParser.StringLASTContext ctx) { return null; }
+    @Override public Object visitStringLAST(miParser.StringLASTContext ctx) { return Type.STRING; }
 }

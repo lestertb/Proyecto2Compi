@@ -45,7 +45,7 @@ public class TablaSimbolos {
         System.out.println("----- INICIO TABLA ------");
         for (int i = 0; i < tabla.size(); i++) {
             Token s = (Token) ((Ident) tabla.get(i)).tok;
-            System.out.println("Nombre: " + s.getText() + " - " +"Nivel: " + ((Ident) tabla.get(i)).nivel + " - " +" Tipo "+((Ident) tabla.get(i)).type);
+            System.out.println("Nombre: " + s.getText() + " - " +"Nivel: " + ((Ident) tabla.get(i)).nivel + " - " +" Tipo: "+((Ident) tabla.get(i)).type);
         }
         System.out.println("----- FIN TABLA ------");
     }
