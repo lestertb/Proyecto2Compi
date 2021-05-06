@@ -138,7 +138,20 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         if(attr != null){
             tabla.insertar(ctx.ID().getSymbol(), (Type) attr,ctx);
         }
-        this.visit(ctx.expression());
+        Object typeAssign = this.visit(ctx.expression());
+        if (typeAssign != null){
+            if ( attr == Type.BOOLEAN){
+                if (typeAssign != Type.TRUE){
+                    if (typeAssign != Type.FALSE)
+                        System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+                }
+            }
+            else if (attr != typeAssign){
+                System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+            }
+        }else {
+            System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+ " Dato no reconocido" + " )");
+        }
         return null;
     }
 
@@ -155,7 +168,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         return ctx.ID();
     }
 
-    @Override public Object visitBooleanSTAST(miParser.BooleanSTASTContext ctx) { return null; }
+    @Override public Object visitBooleanSTAST(miParser.BooleanSTASTContext ctx) { return Type.BOOLEAN; }
 
     @Override public Object visitCharSTAST(miParser.CharSTASTContext ctx) { return null; }
 
@@ -164,10 +177,10 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitStringSTAST(miParser.StringSTASTContext ctx) {
-        return super.visitStringSTAST(ctx);
+        return Type.STRING;
     }
 
-    @Override public Object visitArrayTypeAST(miParser.ArrayTypeASTContext ctx) { return null; }
+    @Override public Object visitArrayTypeAST(miParser.ArrayTypeASTContext ctx) { return Type.ARRAY; }
 
     @Override public Object visitAssignmentAST(miParser.AssignmentASTContext ctx) {
         Ident id = tabla.buscar(ctx.ID().get(0).toString());
@@ -186,37 +199,110 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitExpressionAST(miParser.ExpressionASTContext ctx) {
-        Type exprType;
+        Type exprType = null;
         Type exprType2 = null;
-        exprType = (Type) this.visit(ctx.simpleExpression(0));
-        for (int i = 1; i <ctx.simpleExpression().size() ; i++) {
-            exprType2 = (Type) this.visit(ctx.simpleExpression(i));
-            if(exprType != exprType2)
-                System.out.println("Error tipos incompatibles");
+        try {
+            exprType = (Type) this.visit(ctx.simpleExpression(0));
+            for (int i = 1; i <ctx.simpleExpression().size() ; i++) {
+                exprType2 = (Type) this.visit(ctx.simpleExpression(i));
+                if (exprType == Type.TRUE || exprType == Type.FALSE){
+                    if(exprType2 != Type.TRUE){
+                        if (exprType2 != Type.FALSE)
+                            System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+                    }
+                }else if (exprType2 == Type.TRUE || exprType2 == Type.FALSE){
+                    System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+                }
+                else if(exprType != exprType2)
+                    System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+            }
         }
-        System.out.println("----------------");
-        System.out.println(exprType);
-        System.out.println(exprType2);
-        System.out.println("----------------");
-        return null;
+        catch(Exception e) {
+            Object exprDiffType =  this.visit(ctx.simpleExpression(0));
+            Object exprDiffType2 = null;
+            for (int i = 1; i <ctx.simpleExpression().size() ; i++) {
+                exprDiffType2 = this.visit(ctx.simpleExpression(i));
+                System.out.println("Error en uso de operadores relacionales para: ( " + exprDiffType+ ", "+ exprDiffType2 + " )");
+                try{ Type test = (Type)exprDiffType;}catch (Exception e2){System.out.println("Error: " + exprDiffType + ": No se reconoce");}
+                try{ Type test = (Type)exprDiffType2;}catch (Exception e2){System.out.println("Error: " + exprDiffType2 + ": No se reconoce");}
+            }
+        }
+        return exprType; //Posible error ver que retorno en visitSimpleExpressionAST
     }
-
+    int cantImp;
     @Override public Object visitSimpleExpressionAST(miParser.SimpleExpressionASTContext ctx) {
-        for (miParser.TermContext c: ctx.term()){
-            this.visit(c);
-        }
-        return null;
-    }
+        Type termType = null;
+        Type termType2 = null;
+        try {
+            termType = (Type) this.visit(ctx.term(0));
+            for (int i = 1; i <ctx.term().size() ; i++) {
+                termType2 = (Type) this.visit(ctx.term(i));
+                if (termType == Type.TRUE || termType == Type.FALSE){
+                    if(termType2 != Type.TRUE){
+                        if (termType2 != Type.FALSE)
+                            System.out.println("Error en uso de operadores aditivos para: ( " + termType+ ", "+termType2 + " )");
+                    }
+                }else if (termType2 == Type.TRUE || termType2 == Type.FALSE){
+                    System.out.println("Error en uso de operadores aditivos para: ( " + termType+ ", "+termType2 + " )");
+                }
+                else if(termType != termType2)
+                    System.out.println("Error en uso de operadores aditivos para: ( " + termType+ ", "+termType2 + " )");
+            }
 
-    @Override public Object visitTermAST(miParser.TermASTContext ctx) {
-        for (miParser.FactorContext c: ctx.factor()){
-            this.visit(c);
+        }catch(Exception e){
+            Object termDiffType =  this.visit(ctx.term(0));
+            Object termDiffType2 = null;
+            for (int i = 1; i <ctx.term().size() ; i++) {
+                termDiffType2 = this.visit(ctx.term(i));
+                cantImp++;
+                if(cantImp < 2){
+                    System.out.println("Error en uso de operadores aditivos para: ( " + termDiffType+ ", "+ termDiffType2 + " )");
+                    try{ Type test = (Type)termDiffType;}catch (Exception e2){System.out.println("Error, " + termDiffType + ": No se reconoce");}
+                    try{ Type test = (Type)termDiffType2;}catch (Exception e2){System.out.println("Error, " + termDiffType2 + ": No se reconoce");}
+                }
+            }
         }
-        return ctx;
+        return this.visit(ctx.term(0));
+    }
+    int cantImp2;
+    @Override public Object visitTermAST(miParser.TermASTContext ctx) {
+        Type factType = null;
+        Type factType2 = null;
+
+        factType = (Type) this.visit(ctx.factor(0));
+        for (int i = 1; i <ctx.factor().size() ; i++) {
+            cantImp2++;
+            factType2 = (Type) this.visit(ctx.factor(i));
+            if (factType == Type.TRUE || factType == Type.FALSE){
+                if(factType2 != Type.TRUE){
+                    if (factType2 != Type.FALSE){
+                        if (cantImp2 < 2)
+                            System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+factType2 + " )");
+                    }
+                }
+            }else if (factType2 == Type.TRUE || factType2 == Type.FALSE){
+                if (cantImp2 < 2)
+                    System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+factType2 + " )");
+            }
+            else if(factType != factType2)
+                if (cantImp2 < 2){
+                    if(factType == null){
+                        System.out.println("Error en uso de operadores multiplicativos para: ( " + ctx.factor(0).getText()+ ", "+factType2 + " )");
+                        System.out.println("Error, " +  ctx.factor(0).getText() + ": No se reconoce");
+                    }else if (factType2 == null){
+                        System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+ctx.factor(1).getText() + " )");
+                        System.out.println("Error, " +  ctx.factor(1).getText() + ": No se reconoce");
+                    }else{
+                        System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+factType2 + " )");
+                    }
+                }
+        }
+        if(this.visit(ctx.factor(0)) == null )
+            return ctx.getText();
+        return this.visit(ctx.factor(0));
     }
 
     @Override public Object visitLiteralFAST(miParser.LiteralFASTContext ctx) {
-        System.out.println(this.visit(ctx.literal()));
         return this.visit(ctx.literal());
     }
 
@@ -297,7 +383,9 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
     @Override public Object visitArrayLengthAST(miParser.ArrayLengthASTContext ctx) { return null; }
 
-    @Override public Object visitBoolLiteral(miParser.BoolLiteralContext ctx) { return null; }
+    @Override public Object visitBoolLiteral(miParser.BoolLiteralContext ctx) {
+        return ctx.getText();
+    }
 
     @Override public Object visitIntLAST(miParser.IntLASTContext ctx) {
         return Type.INT;
@@ -305,7 +393,13 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
     @Override public Object visitRealLAST(miParser.RealLASTContext ctx) { return null; }
 
-    @Override public Object visitBoolLAST(miParser.BoolLASTContext ctx) { return null; }
+    @Override public Object visitBoolLAST(miParser.BoolLASTContext ctx) {
+        if (this.visit(ctx.boolLiteral()).toString().equals("true")){
+            return Type.TRUE;
+        }else {
+            return Type.FALSE;
+        }
+    }
 
     @Override public Object visitStringLAST(miParser.StringLASTContext ctx) { return Type.STRING; }
 }

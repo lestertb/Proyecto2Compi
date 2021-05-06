@@ -25,7 +25,7 @@ ifStatement      : IF PIZQ expression PDER block (ELSE block)?              #ifS
 returnStatement  : RETURN expression                                        #returnStatementAST;
 printStatement   : PRINT expression                                         #printStatementAST;
 classDeclaration    : CLASS ID LLAIZQ  (classVariableDeclaration)* LLADER   #classDeclarationAST;
-classVariableDeclaration       : simpleType ID (ASSIGN expression)?         #classVariableDeclarationAST;
+classVariableDeclaration       : simpleType ID (ASSIGN expression)? PyComa  #classVariableDeclarationAST;
 variableDeclaration     : type ID  (ASSIGN expression)?                     #variableDeclarationAST;
 
 type       : simpleType                                                     #simpleTypeTAST

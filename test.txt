@@ -1,3 +1,4 @@
-int MAX = "hola";
 
+string x = "dsas" * 1;
 
+//Siga con la parte de asignación
