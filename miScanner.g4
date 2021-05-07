@@ -68,7 +68,7 @@ STRINGLITERAL    : COMIDOBLES (PRINTABLE)* COMIDOBLES;
 //fragments
 fragment DIGIT : '0'..'9';
 fragment LETTER: 'a'..'z' | 'A'..'Z';
-fragment PRINTABLE  : DIGIT | LETTER | ' ' | INTERROGATION | COMIDOBLES | '#' | '$' | '%' | '&'
+fragment PRINTABLE  : DIGIT | LETTER | ' ' | INTERROGATION  | '#' | '$' | '%' | '&'
                              | '\'' | PIZQ | PDER | MUL | SUM | COMA | SUB | POINT | DIV | DOSPUN | PyComa
                              | MENOR | ASSIGN | MAYOR | '?' | '@' | PCIZQ | PCDER | '^' | UNDERSC | '`'
                              | LLAIZQ | '|' | LLADER | VIR;

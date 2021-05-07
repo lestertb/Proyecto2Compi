@@ -197,7 +197,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         this.visit(ctx.expression(1));
         return null;
     }
-
+    int cantImErr = 0;
     @Override public Object visitExpressionAST(miParser.ExpressionASTContext ctx) {
         Type exprType = null;
         Type exprType2 = null;
@@ -205,26 +205,80 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             exprType = (Type) this.visit(ctx.simpleExpression(0));
             for (int i = 1; i <ctx.simpleExpression().size() ; i++) {
                 exprType2 = (Type) this.visit(ctx.simpleExpression(i));
-                if (exprType == Type.TRUE || exprType == Type.FALSE){
-                    if(exprType2 != Type.TRUE){
-                        if (exprType2 != Type.FALSE)
-                            System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+                if(
+                        ctx.REOPERATOR().get(0).toString().equals("<") || ctx.REOPERATOR().get(0).toString().equals(">")
+                        || ctx.REOPERATOR().get(0).toString().equals("<=") || ctx.REOPERATOR().get(0).toString().equals(">=")
+                ){
+                    if(exprType != Type.INT || exprType2 != Type.INT){
+                        System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + exprType+ ", "+exprType2 + " )");
                     }
-                }else if (exprType2 == Type.TRUE || exprType2 == Type.FALSE){
-                    System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+                }else if(ctx.REOPERATOR().get(0).toString().equals("==") || ctx.REOPERATOR().get(0).toString().equals("!=")) {
+                    if (exprType != exprType2)
+                        System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + exprType+ ", "+exprType2 + " )");
+                }else{
+                    if (exprType == Type.TRUE || exprType == Type.FALSE){
+                        if(exprType2 != Type.TRUE){
+                            if (exprType2 != Type.FALSE)
+                                System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+                        }
+                    }else if (exprType2 == Type.TRUE || exprType2 == Type.FALSE){
+                        System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+                    }
+                    else if(exprType != exprType2)
+                        System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
                 }
-                else if(exprType != exprType2)
-                    System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+
             }
         }
         catch(Exception e) {
             Object exprDiffType =  this.visit(ctx.simpleExpression(0));
             Object exprDiffType2 = null;
+            int sonVariables = 0;
+            Ident id1 = tabla.buscar(exprDiffType.toString());
             for (int i = 1; i <ctx.simpleExpression().size() ; i++) {
                 exprDiffType2 = this.visit(ctx.simpleExpression(i));
-                System.out.println("Error en uso de operadores relacionales para: ( " + exprDiffType+ ", "+ exprDiffType2 + " )");
-                try{ Type test = (Type)exprDiffType;}catch (Exception e2){System.out.println("Error: " + exprDiffType + ": No se reconoce");}
-                try{ Type test = (Type)exprDiffType2;}catch (Exception e2){System.out.println("Error: " + exprDiffType2 + ": No se reconoce");}
+                Ident id2 = tabla.buscar(exprDiffType2.toString());
+                if (id1 == null){
+                    sonVariables++;
+                    try{ Type test = (Type)exprDiffType;}
+                    catch (Exception e2){
+                        cantImErr++;
+                        System.out.println("Error en uso de operadores relacionales para: ( " + exprDiffType+ ", "+ exprDiffType2 + " )");
+                        System.out.println("Error: " + exprDiffType + ": No se reconoce");
+                    }
+                }
+                if (id2 == null){
+                    sonVariables++;
+                    try{
+                        Type test = (Type)exprDiffType2;
+                    }catch (Exception e2){
+                        if (cantImErr < 1)
+                            System.out.println("Error en uso de operadores relacionales para: ( " + exprDiffType+ ", "+ exprDiffType2 + " )");
+                        System.out.println("Error: " + exprDiffType2 + ": No se reconoce");
+                    }
+                }
+                if (sonVariables == 0){
+                    if(
+                            ctx.REOPERATOR().get(0).toString().equals("<") || ctx.REOPERATOR().get(0).toString().equals(">")
+                                    || ctx.REOPERATOR().get(0).toString().equals("<=") || ctx.REOPERATOR().get(0).toString().equals(">=")
+                    ){
+                        assert id1 != null;
+                        assert id2 != null;
+                        if(id1.type != Type.INT){ //Aquí hay que comprobar bien las posibilidades de que se operen variables con diferentes tipos de datos, lo mismo para el else if de abajo
+                            if (id2.type != Type.INT)
+                                System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                            else if (exprDiffType2 != Type.INT)
+                                System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + id1.tok.getText()+  ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                        }
+
+                    }else if(ctx.REOPERATOR().get(0).toString().equals("==") || ctx.REOPERATOR().get(0).toString().equals("!=")) {
+                        assert id1 != null;
+                        assert id2 != null;
+                        if (id1.type != id2.type)
+                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText() + ", " + id2.tok.getText() + " )");
+
+                    }
+                }
             }
         }
         return exprType; //Posible error ver que retorno en visitSimpleExpressionAST
@@ -237,18 +291,43 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             termType = (Type) this.visit(ctx.term(0));
             for (int i = 1; i <ctx.term().size() ; i++) {
                 termType2 = (Type) this.visit(ctx.term(i));
-                if (termType == Type.TRUE || termType == Type.FALSE){
-                    if(termType2 != Type.TRUE){
-                        if (termType2 != Type.FALSE)
-                            System.out.println("Error en uso de operadores aditivos para: ( " + termType+ ", "+termType2 + " )");
-                    }
-                }else if (termType2 == Type.TRUE || termType2 == Type.FALSE){
-                    System.out.println("Error en uso de operadores aditivos para: ( " + termType+ ", "+termType2 + " )");
+                switch (ctx.ADDITIVEOP().get(0).toString()) {
+                    case "or":
+                        if (termType != Type.INT) {
+                            if (termType != Type.TRUE)
+                                if (termType != Type.FALSE)
+                                    System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termType + ", " + termType2 + " )");
+                        }
+                        if (termType2 != Type.INT) {
+                            if (termType2 != Type.TRUE)
+                                if (termType2 != Type.FALSE)
+                                    System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termType + ", " + termType2 + " )");
+                        }
+                        break;
+                    case "+":
+                        if (termType == Type.INT && termType2 != Type.INT)
+                            System.out.println("Error en uso de operadores aditivos( + ) para: ( " + termType + ", " + termType2 + " )");
+                        if (termType == Type.STRING && termType2 != Type.STRING)
+                            System.out.println("Error en uso de operadores aditivos( + ) para: ( " + termType + ", " + termType2 + " )");
+                        break;
+                    case "-":
+                        if (termType != Type.INT || termType2 != Type.INT) {
+                            System.out.println("Error en uso de operadores aditivos( - ) para: ( " + termType + ", " + termType2 + " )");
+                        }
+                        break;
+                    default:
+                        if (termType == Type.TRUE || termType == Type.FALSE) {
+                            if (termType2 != Type.TRUE) {
+                                if (termType2 != Type.FALSE)
+                                    System.out.println("Error en uso de operadores aditivos para: ( " + termType + ", " + termType2 + " )");
+                            }
+                        } else if (termType2 == Type.TRUE || termType2 == Type.FALSE) {
+                            System.out.println("Error en uso de operadores aditivos para: ( " + termType + ", " + termType2 + " )");
+                        } else if (termType != termType2)
+                            System.out.println("Error en uso de operadores aditivos para: ( " + termType + ", " + termType2 + " )");
+                        break;
                 }
-                else if(termType != termType2)
-                    System.out.println("Error en uso de operadores aditivos para: ( " + termType+ ", "+termType2 + " )");
             }
-
         }catch(Exception e){
             Object termDiffType =  this.visit(ctx.term(0));
             Object termDiffType2 = null;
@@ -268,34 +347,59 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     @Override public Object visitTermAST(miParser.TermASTContext ctx) {
         Type factType = null;
         Type factType2 = null;
-
         factType = (Type) this.visit(ctx.factor(0));
         for (int i = 1; i <ctx.factor().size() ; i++) {
             cantImp2++;
             factType2 = (Type) this.visit(ctx.factor(i));
-            if (factType == Type.TRUE || factType == Type.FALSE){
-                if(factType2 != Type.TRUE){
-                    if (factType2 != Type.FALSE){
+
+            if(ctx.MULTIPLICATEOP().get(0).toString().equals("and")){
+                if(factType != Type.INT ){
+                    if (factType != Type.TRUE)
+                        if (factType != Type.FALSE)
+                            if (cantImp2 < 2)
+                                System.out.println("Error en uso de operadores aditivos( and ) para: ( " + factType+ ", "+factType2 + " )");
+                }
+                if(factType2 != Type.INT ){
+                    if (factType2 != Type.TRUE)
+                        if (factType2 != Type.FALSE)
+                            if (cantImp2 < 2)
+                                System.out.println("Error en uso de operadores aditivos( and ) para: ( " + factType+ ", "+factType2 + " )");
+                }
+            }else{
+
+                if (ctx.MULTIPLICATEOP().get(0).toString().equals("*") || ctx.MULTIPLICATEOP().get(0).toString().equals("/")) {
+                    if (factType != Type.INT || factType2 != Type.INT){
                         if (cantImp2 < 2)
-                            System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+factType2 + " )");
+                            System.out.println("Error en uso de operadores aditivos( * , / ) para: ( " + factType + ", " + factType2 + " )");
                     }
+                } else {
+
+                    if (factType == Type.TRUE || factType == Type.FALSE) {
+                        if (factType2 != Type.TRUE) {
+                            if (factType2 != Type.FALSE) {
+                                if (cantImp2 < 2)
+                                    System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + factType2 + " )");
+                            }
+                        }
+                    } else if (factType2 == Type.TRUE || factType2 == Type.FALSE) {
+                        if (cantImp2 < 2)
+                            System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + factType2 + " )");
+                    } else if (factType != factType2)
+                        if (cantImp2 < 2) {
+                            if (factType == null) {
+                                System.out.println("Error en uso de operadores multiplicativos para: ( " + ctx.factor(0).getText() + ", " + factType2 + " )");
+                                System.out.println("Error, " + ctx.factor(0).getText() + ": No se reconoce");
+                            } else if (factType2 == null) {
+                                System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + ctx.factor(1).getText() + " )");
+                                System.out.println("Error, " + ctx.factor(1).getText() + ": No se reconoce");
+                            } else {
+                                System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + factType2 + " )");
+                            }
+                        }
                 }
-            }else if (factType2 == Type.TRUE || factType2 == Type.FALSE){
-                if (cantImp2 < 2)
-                    System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+factType2 + " )");
+
             }
-            else if(factType != factType2)
-                if (cantImp2 < 2){
-                    if(factType == null){
-                        System.out.println("Error en uso de operadores multiplicativos para: ( " + ctx.factor(0).getText()+ ", "+factType2 + " )");
-                        System.out.println("Error, " +  ctx.factor(0).getText() + ": No se reconoce");
-                    }else if (factType2 == null){
-                        System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+ctx.factor(1).getText() + " )");
-                        System.out.println("Error, " +  ctx.factor(1).getText() + ": No se reconoce");
-                    }else{
-                        System.out.println("Error en uso de operadores multiplicativos para: ( " + factType+ ", "+factType2 + " )");
-                    }
-                }
+
         }
         if(this.visit(ctx.factor(0)) == null )
             return ctx.getText();

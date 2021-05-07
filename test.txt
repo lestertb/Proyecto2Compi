@@ -1,4 +1,6 @@
 
-string x = "dsas" * 1;
+boolean x = true;
 
-//Siga con la parte de asignación
+int z = 1;
+
+int y = x < z;
