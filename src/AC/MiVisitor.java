@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.sql.SQLOutput;
+import java.util.concurrent.ExecutionException;
 
 public class MiVisitor extends miParserBaseVisitor<Object> {
 
@@ -252,7 +253,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                         System.out.println("Error: " + exprDiffType2 + ": No se reconoce");
                     }
                 }
-                if (sonVariables == 0){
+                if (sonVariables == 0){ //Ambas variables
                     if(ctx.REOPERATOR().get(0).toString().equals("<") || ctx.REOPERATOR().get(0).toString().equals(">") || ctx.REOPERATOR().get(0).toString().equals("<=") || ctx.REOPERATOR().get(0).toString().equals(">=")){
                         if(id1.type != Type.INT || id2.type != Type.INT)
                             System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
@@ -309,6 +310,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         return exprType; //Posible error ver que retorno en visitSimpleExpressionAST
     }
     int cantImp;
+    int cantImpErrorSE;
     @Override public Object visitSimpleExpressionAST(miParser.SimpleExpressionASTContext ctx) {
         Type termType = null;
         Type termType2 = null;
@@ -320,13 +322,21 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     case "or":
                         if (termType != Type.INT) {
                             if (termType != Type.TRUE)
-                                if (termType != Type.FALSE)
-                                    System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termType + ", " + termType2 + " )");
+                                if (termType != Type.FALSE) {
+                                    if (cantImpErrorSE < 1) {
+                                        cantImpErrorSE++;
+                                        System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termType + ", " + termType2 + " )");
+                                    }
+                                }
                         }
                         if (termType2 != Type.INT) {
                             if (termType2 != Type.TRUE)
-                                if (termType2 != Type.FALSE)
-                                    System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termType + ", " + termType2 + " )");
+                                if (termType2 != Type.FALSE){
+                                    if (cantImpErrorSE < 1) {
+                                        cantImpErrorSE++;
+                                        System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termType + ", " + termType2 + " )");
+                                    }
+                                }
                         }
                         break;
                     case "+":
@@ -340,87 +350,330 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                             System.out.println("Error en uso de operadores aditivos( - ) para: ( " + termType + ", " + termType2 + " )");
                         }
                         break;
-                    default:
-                        if (termType == Type.TRUE || termType == Type.FALSE) {
-                            if (termType2 != Type.TRUE) {
-                                if (termType2 != Type.FALSE)
-                                    System.out.println("Error en uso de operadores aditivos para: ( " + termType + ", " + termType2 + " )");
-                            }
-                        } else if (termType2 == Type.TRUE || termType2 == Type.FALSE) {
-                            System.out.println("Error en uso de operadores aditivos para: ( " + termType + ", " + termType2 + " )");
-                        } else if (termType != termType2)
-                            System.out.println("Error en uso de operadores aditivos para: ( " + termType + ", " + termType2 + " )");
-                        break;
                 }
             }
         }catch(Exception e){
             Object termDiffType =  this.visit(ctx.term(0));
             Object termDiffType2 = null;
+            int sonVariables = 0;
+            Ident id1 = tabla.buscar(termDiffType.toString());
             for (int i = 1; i <ctx.term().size() ; i++) {
                 termDiffType2 = this.visit(ctx.term(i));
-                cantImp++;
-                if(cantImp < 2){
-                    System.out.println("Error en uso de operadores aditivos para: ( " + termDiffType+ ", "+ termDiffType2 + " )");
-                    try{ Type test = (Type)termDiffType;}catch (Exception e2){System.out.println("Error, " + termDiffType + ": No se reconoce");}
-                    try{ Type test = (Type)termDiffType2;}catch (Exception e2){System.out.println("Error, " + termDiffType2 + ": No se reconoce");}
+                Ident id2 = tabla.buscar(termDiffType2.toString());
+                if (id1 == null){
+                    sonVariables=2;
+                    try{ Type test = (Type)termDiffType;}
+                    catch (Exception e2){
+                        cantImp++;
+                        System.out.println("Error en uso de operadores aditivos para: ( " + termDiffType+ ", "+ termDiffType2 + " )");
+                        System.out.println("Error, " + termDiffType + ": No se reconoce");
+                    }
                 }
+                if (id2 == null){
+                    sonVariables=1;
+                    try{
+                        Type test = (Type)termDiffType2;
+                    }catch (Exception e2){
+                        if (cantImp < 1)
+                            System.out.println("Error en uso de operadores aditivos para: ( " + termDiffType+ ", "+ termDiffType2 + " )");
+                        System.out.println("Error, " + termDiffType2 + ": No se reconoce");
+                    }
+                }
+                if (sonVariables == 0){//Ambas variables
+                    switch (ctx.ADDITIVEOP().get(0).toString()) {
+                        case "or":
+                            if (id1.type != Type.INT) {
+                                if (id1.type != Type.BOOLEAN){
+                                    if(cantImpErrorSE < 1){
+                                        cantImpErrorSE++;
+                                        System.out.println("Error, en uso de operadores aditivos( or ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                    }
+                                }
+                            }
+                            if (id2.type != Type.INT) {
+                                if (id2.type != Type.BOOLEAN){
+                                    if(cantImpErrorSE < 1){
+                                        cantImpErrorSE++;
+                                        System.out.println("Error en uso de operadores aditivos( or ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                    }
+                                }
+                            }
+                            break;
+                        case "+":
+                            if (id1.type == Type.INT && id2.type != Type.INT){
+                                if(cantImpErrorSE < 1){
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( + ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                }
+                            }
+                            if (id1.type == Type.STRING && id2.type != Type.STRING){
+                                if(cantImpErrorSE < 1){
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( + ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                }
+                            }
+                            break;
+                        case "-":
+                            if (id1.type != Type.INT || id2.type != Type.INT) {
+                                if(cantImpErrorSE < 1){
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( - ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                }
+                            }
+                            break;
+                        }
+
+                    }
+                if (sonVariables == 1){ //La primera es variable
+
+                    switch (ctx.ADDITIVEOP().get(0).toString()) {
+                        case "or" -> {
+                            assert id1 != null;
+                            if (id1.type != Type.INT) {
+                                if (id1.type != Type.BOOLEAN) {
+                                    if (cantImpErrorSE < 1) {
+                                        cantImpErrorSE++;
+                                        System.out.println("Error en uso de operadores aditivos( or ) para: ( " + id1.tok.getText() + ": " + id1.type + ", " + termDiffType2 + " )");
+                                    }
+                                }
+                            } if (termDiffType2 != Type.INT) {
+                                if (termDiffType2 != Type.TRUE) {
+                                    if(termDiffType2 != Type.FALSE){
+                                        if (cantImpErrorSE < 1) {
+                                            cantImpErrorSE++;
+                                            System.out.println("Error en uso de operadores aditivos( or ) para: ( " + id1.tok.getText() + ": " + id1.type + ", " + termDiffType2 + " )");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        case "+" -> {
+                            assert id1 != null;
+                            if (id1.type == Type.INT && termDiffType2 != Type.INT) {
+                                if (cantImpErrorSE < 1) {
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( + ) para: ( " + id1.tok.getText() + ": " + id1.type + ", " + termDiffType2 + " )");
+                                }
+                            }
+                            if (id1.type == Type.STRING && termDiffType2 != Type.STRING) {
+                                if (cantImpErrorSE < 1) {
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( + ) para: ( " + id1.tok.getText() + ": " + id1.type + ", " + termDiffType2 + " )");
+                                }
+                            }
+                        }
+                        case "-" -> {
+                            assert id1 != null;
+                            if (id1.type != Type.INT || termDiffType2 != Type.INT) {
+                                if (cantImpErrorSE < 1) {
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( - ) para: ( " + id1.tok.getText() + ": " + id1.type + ", " + termDiffType2 + " )");
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+                if (sonVariables == 2){ //La segunda es variable
+
+                    switch (ctx.ADDITIVEOP().get(0).toString()) {
+                        case "or":
+                            if (termDiffType != Type.INT) {
+                                if (termDiffType != Type.TRUE){
+                                    if(termDiffType != Type.FALSE){
+                                        if(cantImpErrorSE < 1){
+                                            cantImpErrorSE++;
+                                            System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                        }
+                                    }
+                                }
+                            }
+                            if (id2.type != Type.INT) {
+                                if (id2.type != Type.BOOLEAN){
+                                    if(cantImpErrorSE < 1){
+                                        cantImpErrorSE++;
+                                        System.out.println("Error en uso de operadores aditivos( or ) para: ( " + termDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                    }
+                                }
+                            }
+                            break;
+                        case "+":
+                            if (termDiffType == Type.INT && id2.type != Type.INT){
+                                if(cantImpErrorSE < 1){
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( + ) para: ( " + termDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                }
+                            }
+                            if (termDiffType == Type.STRING && id2.type != Type.STRING){
+                                if(cantImpErrorSE < 1){
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( + ) para: ( " + termDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                }
+                            }
+                            break;
+                        case "-":
+                            if (termDiffType != Type.INT || id2.type != Type.INT) {
+                                if(cantImpErrorSE < 1){
+                                    cantImpErrorSE++;
+                                    System.out.println("Error en uso de operadores aditivos( - ) para: ( " + termDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                                }
+                            }
+                            break;
+                    }
+
+                }
+
             }
         }
         return this.visit(ctx.term(0));
     }
     int cantImp2;
+    int cantImp3;
+    int cantImpErrorT;
+    int cantImpVE;
     @Override public Object visitTermAST(miParser.TermASTContext ctx) {
         Type factType = null;
         Type factType2 = null;
-        factType = (Type) this.visit(ctx.factor(0));
-        for (int i = 1; i <ctx.factor().size() ; i++) {
-            cantImp2++;
-            factType2 = (Type) this.visit(ctx.factor(i));
-
-            if(ctx.MULTIPLICATEOP().get(0).toString().equals("and")){
-                if(factType != Type.INT ){
-                    if (factType != Type.TRUE)
-                        if (factType != Type.FALSE)
-                            if (cantImp2 < 2)
-                                System.out.println("Error en uso de operadores aditivos( and ) para: ( " + factType+ ", "+factType2 + " )");
-                }
-                if(factType2 != Type.INT ){
-                    if (factType2 != Type.TRUE)
-                        if (factType2 != Type.FALSE)
-                            if (cantImp2 < 2)
-                                System.out.println("Error en uso de operadores aditivos( and ) para: ( " + factType+ ", "+factType2 + " )");
-                }
-            }else{
-
-                if (ctx.MULTIPLICATEOP().get(0).toString().equals("*") || ctx.MULTIPLICATEOP().get(0).toString().equals("/")) {
-                    if (factType != Type.INT || factType2 != Type.INT){
-                        if (cantImp2 < 2)
-                            System.out.println("Error en uso de operadores aditivos( * , / ) para: ( " + factType + ", " + factType2 + " )");
-                    }
-                } else {
-
-                    if (factType == Type.TRUE || factType == Type.FALSE) {
-                        if (factType2 != Type.TRUE) {
-                            if (factType2 != Type.FALSE) {
+        try {
+            factType = (Type) this.visit(ctx.factor(0));
+            for (int i = 1; i <ctx.factor().size() ; i++) {
+                cantImp2++;
+                factType2 = (Type) this.visit(ctx.factor(i));
+                if(ctx.MULTIPLICATEOP().get(0).toString().equals("and")){
+                    if(factType != Type.INT ){
+                        if (factType != Type.TRUE)
+                            if (factType != Type.FALSE)
                                 if (cantImp2 < 2)
-                                    System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + factType2 + " )");
+                                    System.out.println("Error en uso de operadores multiplicativos ( and ) para: ( " + factType+ ", "+factType2 + " )");
+                    }
+                    if(factType2 != Type.INT ){
+                        if (factType2 != Type.TRUE)
+                            if (factType2 != Type.FALSE)
+                                if (cantImp2 < 2)
+                                    System.out.println("Error en uso de operadores multiplicativos ( and ) para: ( " + factType+ ", "+factType2 + " )");
+                    }
+                }else{
+                    if (ctx.MULTIPLICATEOP().get(0).toString().equals("*") || ctx.MULTIPLICATEOP().get(0).toString().equals("/")) {
+                        if (factType != Type.INT || factType2 != Type.INT){
+                            if (cantImp2 < 2)
+                                System.out.println("Error en uso de operadores multiplicativos ( * , / ) para: ( " + factType + ", " + factType2 + " )");
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e){
+            Object factDiffType =  this.visit(ctx.factor(0));
+            Object factDiffType2 = null;
+            int sonVariables = 0;
+            Ident id1 = tabla.buscar(factDiffType.toString());
+            for (int i = 1; i <ctx.factor().size() ; i++) {
+                cantImp2++;
+                factDiffType2 = this.visit(ctx.factor(i));
+                Ident id2 = tabla.buscar(factDiffType2.toString());
+                if (id1 == null){
+                    sonVariables=2;
+                    try{ Type test = (Type)factDiffType;}
+                    catch (Exception e2){
+                        if (cantImpErrorT < 1){
+                            cantImpErrorT++;
+                            cantImp3++;
+                            System.out.println("Error en uso de operadores multiplicativos para: ( " + factDiffType+ ", "+ factDiffType2 + " )");
+                            System.out.println("Error, " + factDiffType + ": No se reconoce");
+                        }
+                    }
+                }
+                if (id2 == null){
+                    sonVariables=1;
+                    try{
+                        Type test = (Type)factDiffType2;
+                    }catch (Exception e2){
+                        if (cantImpErrorT < 2){
+                            if (cantImp3 < 1)
+                                System.out.println("Error en uso de operadores multiplicativos para: ( " + factDiffType+ ", "+ factDiffType2 + " )");
+                            if(cantImpVE < 1) {
+                                cantImpVE++;
+                                System.out.println("Error, " + factDiffType2 + ": No se reconoce");
                             }
                         }
-                    } else if (factType2 == Type.TRUE || factType2 == Type.FALSE) {
-                        if (cantImp2 < 2)
-                            System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + factType2 + " )");
-                    } else if (factType != factType2)
-                        if (cantImp2 < 2) {
-                            if (factType == null) {
-                                System.out.println("Error en uso de operadores multiplicativos para: ( " + ctx.factor(0).getText() + ", " + factType2 + " )");
-                                System.out.println("Error, " + ctx.factor(0).getText() + ": No se reconoce");
-                            } else if (factType2 == null) {
-                                System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + ctx.factor(1).getText() + " )");
-                                System.out.println("Error, " + ctx.factor(1).getText() + ": No se reconoce");
-                            } else {
-                                System.out.println("Error en uso de operadores multiplicativos para: ( " + factType + ", " + factType2 + " )");
+                    }
+                }
+
+                if (sonVariables == 0){//Ambas variables
+
+                    if(ctx.MULTIPLICATEOP().get(0).toString().equals("and")){
+                        if(id1.type != Type.INT ){
+                            if (id1.type != Type.BOOLEAN)
+                                    if (cantImp2 < 2)
+                                        System.out.println("Error, en uso de operadores multiplicativos ( and ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                        }
+                        if(id2.type != Type.INT ){
+                            if (id2.type != Type.BOOLEAN)
+                                    if (cantImp2 < 2)
+                                        System.out.println("Error en uso de operadores multiplicativos ( and ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                        }
+                    }else{
+                        if (ctx.MULTIPLICATEOP().get(0).toString().equals("*") || ctx.MULTIPLICATEOP().get(0).toString().equals("/")) {
+                            if (id1.type != Type.INT || id2.type != Type.INT){
+                                if (cantImp2 < 2)
+                                    System.out.println("Error en uso de operadores multiplicativos ( * , / ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
                             }
                         }
+                    }
+
+                }
+
+                if (sonVariables == 1){ //La primera es variable
+
+                    if(ctx.MULTIPLICATEOP().get(0).toString().equals("and")){
+                        assert id1 != null;
+                        if(id1.type != Type.INT ){
+                            if (id1.type != Type.BOOLEAN)
+                                if (cantImp2 < 2)
+                                    System.out.println("Error, en uso de operadores multiplicativos ( and ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+ factDiffType2 + " )");
+                        }
+                        if(factDiffType2 != Type.INT ){
+                            if (factDiffType2 != Type.TRUE)
+                                if (factDiffType2 != Type.FALSE)
+                                    if (cantImp2 < 2)
+                                        System.out.println("Error en uso de operadores multiplicativos ( and ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+ factDiffType2 + " )");
+                        }
+                    }else{
+                        if (ctx.MULTIPLICATEOP().get(0).toString().equals("*") || ctx.MULTIPLICATEOP().get(0).toString().equals("/")) {
+                            assert id1 != null;
+                            if (id1.type != Type.INT || factDiffType2 != Type.INT){
+                                if (cantImp2 < 2)
+                                    System.out.println("Error en uso de operadores multiplicativos ( * , / ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+ factDiffType2 + " )");
+                            }
+                        }
+                    }
+
+                }
+
+                if (sonVariables == 2){ //La segunda es variable
+
+                    if(ctx.MULTIPLICATEOP().get(0).toString().equals("and")){
+                        if(factDiffType != Type.INT ){
+                            if (factDiffType!= Type.TRUE)
+                                if(factDiffType != Type.FALSE)
+                                    if (cantImp2 < 2)
+                                        System.out.println("Error, en uso de operadores multiplicativos ( and ) para: ( " + factDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                        }
+                        if(id2.type != Type.INT ){
+                            if (id2.type != Type.BOOLEAN)
+                                if (cantImp2 < 2)
+                                    System.out.println("Error en uso de operadores multiplicativos ( and ) para: ( " + factDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                        }
+                    }else{
+                        if (ctx.MULTIPLICATEOP().get(0).toString().equals("*") || ctx.MULTIPLICATEOP().get(0).toString().equals("/")) {
+                            if (factDiffType != Type.INT || id2.type != Type.INT){
+                                if (cantImp2 < 2)
+                                    System.out.println("Error en uso de operadores multiplicativos ( * , / ) para: ( " + factDiffType + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                            }
+                        }
+                    }
+
                 }
 
             }
@@ -436,7 +689,9 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitIdFAST(miParser.IdFASTContext ctx) {
-        return null;
+        if(ctx.ID().size() == 1)
+            return ctx.ID().get(0);
+        return null; //Aquí hay que ver que hacer para cuando se use id.algo, cuando size sea 2
     }
 
     @Override public Object visitFunctionCallFAST(miParser.FunctionCallFASTContext ctx) {

@@ -3,7 +3,12 @@ boolean x = true;
 
 int z = 1;
 
-string f = "a";
+int u = 10;
 
-boolean y = false != 1;
+string a = "aa";
 
+string b = "bb";
+
+boolean y = false;
+
+int m = a and false;
