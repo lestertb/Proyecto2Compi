@@ -3,4 +3,7 @@ boolean x = true;
 
 int z = 1;
 
-int y = x < z;
+string f = "a";
+
+boolean y = false != 1;
+

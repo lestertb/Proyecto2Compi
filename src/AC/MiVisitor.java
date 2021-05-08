@@ -213,9 +213,6 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                         System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + exprType+ ", "+exprType2 + " )");
                     }
                 }else if(ctx.REOPERATOR().get(0).toString().equals("==") || ctx.REOPERATOR().get(0).toString().equals("!=")) {
-                    if (exprType != exprType2)
-                        System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + exprType+ ", "+exprType2 + " )");
-                }else{
                     if (exprType == Type.TRUE || exprType == Type.FALSE){
                         if(exprType2 != Type.TRUE){
                             if (exprType2 != Type.FALSE)
@@ -223,11 +220,9 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                         }
                     }else if (exprType2 == Type.TRUE || exprType2 == Type.FALSE){
                         System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
-                    }
-                    else if(exprType != exprType2)
-                        System.out.println("Error en uso de operadores relacionales para: ( " + exprType+ ", "+exprType2 + " )");
+                    }else if (exprType != exprType2)
+                        System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + exprType+ ", "+exprType2 + " )");
                 }
-
             }
         }
         catch(Exception e) {
@@ -239,7 +234,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                 exprDiffType2 = this.visit(ctx.simpleExpression(i));
                 Ident id2 = tabla.buscar(exprDiffType2.toString());
                 if (id1 == null){
-                    sonVariables++;
+                    sonVariables=2;
                     try{ Type test = (Type)exprDiffType;}
                     catch (Exception e2){
                         cantImErr++;
@@ -248,7 +243,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     }
                 }
                 if (id2 == null){
-                    sonVariables++;
+                    sonVariables=1;
                     try{
                         Type test = (Type)exprDiffType2;
                     }catch (Exception e2){
@@ -258,25 +253,55 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     }
                 }
                 if (sonVariables == 0){
-                    if(
-                            ctx.REOPERATOR().get(0).toString().equals("<") || ctx.REOPERATOR().get(0).toString().equals(">")
-                                    || ctx.REOPERATOR().get(0).toString().equals("<=") || ctx.REOPERATOR().get(0).toString().equals(">=")
-                    ){
-                        assert id1 != null;
-                        assert id2 != null;
-                        if(id1.type != Type.INT){ //Aquí hay que comprobar bien las posibilidades de que se operen variables con diferentes tipos de datos, lo mismo para el else if de abajo
-                            if (id2.type != Type.INT)
-                                System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
-                            else if (exprDiffType2 != Type.INT)
-                                System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + id1.tok.getText()+  ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
-                        }
+                    if(ctx.REOPERATOR().get(0).toString().equals("<") || ctx.REOPERATOR().get(0).toString().equals(">") || ctx.REOPERATOR().get(0).toString().equals("<=") || ctx.REOPERATOR().get(0).toString().equals(">=")){
+                        if(id1.type != Type.INT || id2.type != Type.INT)
+                            System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
 
                     }else if(ctx.REOPERATOR().get(0).toString().equals("==") || ctx.REOPERATOR().get(0).toString().equals("!=")) {
+                        if (id1.type == Type.BOOLEAN){
+                            if(id2.type != Type.BOOLEAN)
+                                System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                        }else if (id2.type  == Type.BOOLEAN){
+                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                        }else if (id1.type != id2.type)
+                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+id2.tok.getText() +": "+ id2.type + " )");
+                    }
+                }
+                if (sonVariables == 1){ //La primera es variable
+                    if(ctx.REOPERATOR().get(0).toString().equals("<") || ctx.REOPERATOR().get(0).toString().equals(">") || ctx.REOPERATOR().get(0).toString().equals("<=") || ctx.REOPERATOR().get(0).toString().equals(">=")){
                         assert id1 != null;
-                        assert id2 != null;
-                        if (id1.type != id2.type)
-                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText() + ", " + id2.tok.getText() + " )");
+                        if(id1.type != Type.INT || exprDiffType2 != Type.INT)
+                            System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+exprDiffType2 + " )");
+                    }else if(ctx.REOPERATOR().get(0).toString().equals("==") || ctx.REOPERATOR().get(0).toString().equals("!=")) {
+                        assert id1 != null;
+                        if (id1.type == Type.BOOLEAN){
+                            if(exprDiffType2 != Type.TRUE){
+                                if (exprDiffType2 != Type.FALSE)
+                                    System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+exprDiffType2 + " )");
+                            }
+                        }else if (exprDiffType2  == Type.TRUE || exprDiffType2  == Type.FALSE){
+                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+exprDiffType2 + " )");
+                        }else if (id1.type != exprDiffType2)
+                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + id1.tok.getText()+ ": "+ id1.type + ", "+exprDiffType2 + " )");
+                    }
 
+                }
+                if (sonVariables == 2){ //La segunda es variable
+
+                    if(ctx.REOPERATOR().get(0).toString().equals("<") || ctx.REOPERATOR().get(0).toString().equals(">") || ctx.REOPERATOR().get(0).toString().equals("<=") || ctx.REOPERATOR().get(0).toString().equals(">=")){
+
+                        if(exprDiffType != Type.INT || id2.type != Type.INT)
+                            System.out.println("Error en uso de operadores relacionales( < , > , <= , >= ) para: ( " +exprDiffType + ", " + id2.tok.getText()+ ": "+ id2.type + " )");
+
+                    }else if(ctx.REOPERATOR().get(0).toString().equals("==") || ctx.REOPERATOR().get(0).toString().equals("!=")) {
+                        if (exprDiffType == Type.TRUE || exprDiffType == Type.FALSE){
+                            if(id2.type != Type.BOOLEAN){
+                                    System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " +exprDiffType + ", " + id2.tok.getText()+ ": "+ id2.type + " )");
+                            }
+                        }else if (id2.type  == Type.BOOLEAN){
+                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " +exprDiffType + ", " + id2.tok.getText()+ ": "+ id2.type + " )");
+                        }else if (exprDiffType != id2.type)
+                            System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " +exprDiffType + ", " + id2.tok.getText()+ ": "+ id2.type + " )");
                     }
                 }
             }
