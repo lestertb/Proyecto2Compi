@@ -1,14 +1,8 @@
 
-boolean x = true;
+int x;
 
-int z = 1;
+string y;
 
-int u = 10;
+boolean z;
 
-string a = "aa";
-
-string b = "bb";
-
-boolean y = false;
-
-int m = a and false;
+y = 1;

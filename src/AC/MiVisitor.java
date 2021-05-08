@@ -135,23 +135,29 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitVariableDeclarationAST(miParser.VariableDeclarationASTContext ctx) {
-        Object attr = this.visit(ctx.type());
-        if(attr != null){
-            tabla.insertar(ctx.ID().getSymbol(), (Type) attr,ctx);
-        }
-        Object typeAssign = this.visit(ctx.expression());
-        if (typeAssign != null){
-            if ( attr == Type.BOOLEAN){
-                if (typeAssign != Type.TRUE){
-                    if (typeAssign != Type.FALSE)
-                        System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+        try {
+            Object attr = this.visit(ctx.type());
+            if(attr != null){
+                tabla.insertar(ctx.ID().getSymbol(), (Type) attr,ctx);
+            }
+            Object typeAssign = this.visit(ctx.expression());
+
+            if (typeAssign != null){
+                if ( attr == Type.BOOLEAN){
+                    if (typeAssign != Type.TRUE){
+                        if (typeAssign != Type.FALSE)
+                            if (typeAssign != Type.BOOLEAN)
+                                System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+                    }
                 }
+                else if (attr != typeAssign){
+                    System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+                }
+            }else {
+                System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+ " Dato no reconocido" + " )");
             }
-            else if (attr != typeAssign){
-                System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
-            }
-        }else {
-            System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+ " Dato no reconocido" + " )");
+        }catch (Exception e){
+            //System.out.println("hola");
         }
         return null;
     }
@@ -188,8 +194,23 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         if (id == null){
             System.out.println("\""+ctx.ID().get(0).toString()+"\" no ha sido declarado");
             //throw new RuntimeException();
+        }else{
+            Object assignExpr = visit(ctx.expression());
+            if (assignExpr != null){
+                if ( id.type == Type.BOOLEAN){
+                    if (assignExpr != Type.TRUE){
+                        if (assignExpr != Type.FALSE)
+                            if (assignExpr != Type.BOOLEAN)
+                                System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+assignExpr + " )");
+                    }
+                }
+                else if (id.type != assignExpr){
+                    System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+assignExpr + " )");
+                }
+            }else {
+                System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+ " Dato no reconocido" + " )");
+            }
         }
-        visit(ctx.expression());
         return null;
     }
 
@@ -225,6 +246,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                         System.out.println("Error en uso de operadores relacionales( == , != ) para: ( " + exprType+ ", "+exprType2 + " )");
                 }
             }
+            return exprType;
         }
         catch(Exception e) {
             Object exprDiffType =  this.visit(ctx.simpleExpression(0));
@@ -306,8 +328,10 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     }
                 }
             }
+            assert id1 != null;
+            return id1.type;
         }
-        return exprType; //Posible error ver que retorno en visitSimpleExpressionAST
+       //return exprType; //Posible error ver que retorno en visitSimpleExpressionAST
     }
     int cantImp;
     int cantImpErrorSE;
