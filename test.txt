@@ -1,8 +1,16 @@
 
-int x;
 
-string y;
+int t = 5;
 
-boolean z;
+int[] arreglo = new int[t];
 
-y = 1;
+
+int x = 10;
+
+string a = "aa";
+
+boolean b = true;
+
+arreglo[1] = x;
+
+

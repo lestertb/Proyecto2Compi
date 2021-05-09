@@ -4,8 +4,9 @@ public enum Type {
     BOOLEAN,
     TRUE,
     FALSE,
-    CHAR,
     INT,
     STRING,
-    ARRAY
+    INTARREGLO,
+    STRINGARREGLO,
+    BOOLEANARREGLO
 }

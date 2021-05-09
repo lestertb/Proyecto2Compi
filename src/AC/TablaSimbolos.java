@@ -9,7 +9,7 @@ public class TablaSimbolos {
 
     LinkedList<Object> tabla;
 
-    private int nivelActual;
+    public int nivelActual;
 
     public TablaSimbolos() {
         tabla = new LinkedList<Object>();
