@@ -1,16 +1,8 @@
 
 
-int t = 5;
-
-int[] arreglo = new int[t];
+int x = 2 / "2";
 
 
-int x = 10;
 
-string a = "aa";
-
-boolean b = true;
-
-arreglo[1] = x;
 
 
