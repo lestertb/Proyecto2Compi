@@ -2,18 +2,15 @@ package AC;
 
 import generated.miParser;
 import generated.miParserBaseVisitor;
-import org.antlr.v4.runtime.CommonToken;
-import org.antlr.v4.runtime.tree.ParseTree;
-
-import java.sql.SQLOutput;
-import java.util.concurrent.ExecutionException;
 
 public class MiVisitor extends miParserBaseVisitor<Object> {
 
     private TablaSimbolos tabla;
+    private TablaSimbolos tablaClass;
 
     public MiVisitor() {
         tabla = new TablaSimbolos();
+        tablaClass = new TablaSimbolos();
     }
 
     @Override public Object visitProgramAST(miParser.ProgramASTContext ctx) {
@@ -127,7 +124,16 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitIfStatementAST(miParser.IfStatementASTContext ctx) {
-        this.visit(ctx.expression());
+        Object expre = this.visit(ctx.expression());
+        boolean exist = false;
+        for (Type type: Type.values()){
+            if (expre == type) {
+                exist = true;
+                break;
+            }
+        }
+        if (!exist)
+            System.out.println("\"" + expre + "\"" + " No se reconoce");
         this.visit(ctx.block(0));
         if (ctx.block(1) != null)
             this.visit(ctx.block(1));
@@ -143,13 +149,54 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitClassDeclarationAST(miParser.ClassDeclarationASTContext ctx) {
+        tablaClass.nombreClass = ctx.ID().getText();
+        tablaClass.openScope();
         for(miParser.ClassVariableDeclarationContext c : ctx.classVariableDeclaration())
             this.visit(c);
-        return null;
+        tabla.insertarClass(tablaClass);
+        tablaClass.imprimirTablaClass(tablaClass.nombreClass);
+        tablaClass.closeScope();
+        return ctx;
     }
 
     @Override public Object visitClassVariableDeclarationAST(miParser.ClassVariableDeclarationASTContext ctx) {
-        return null;
+        Object typeDeclaration = null;
+        Object typeAssign = null;
+        try {
+            typeDeclaration = this.visit(ctx.simpleType());
+            if(typeDeclaration != null){
+                Ident id = tablaClass.buscar(ctx.ID().getText());
+                if (id != null && id.nivel == tablaClass.nivelActual){
+                    System.out.println("Declaración duplicada: Ya existe una declaración en el nivel: " + tablaClass.nivelActual + " con el nombre \"" + ctx.ID().getText() + "\"");
+                }else
+                    tablaClass.insertar(ctx.ID().getSymbol(), (Type) typeDeclaration,ctx);
+            }
+            typeAssign = this.visit(ctx.expression());
+            if (typeAssign != null){
+                if ( typeDeclaration == Type.BOOLEAN){
+                    if (typeAssign != Type.TRUE){
+                        if (typeAssign != Type.FALSE)
+                            if (typeAssign != Type.BOOLEAN)
+                                System.out.println("Tipos incompatibles para la asignación: ( " + typeDeclaration+ ", "+typeAssign + " )");
+                    }
+                }
+                else if (typeDeclaration != typeAssign){
+                    System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+typeAssign + " )");
+                }
+            }else {
+                System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+ " Dato no reconocido" + " )");
+            }
+
+        } catch (Exception e){
+            boolean exist = false;
+            for (Type type: Type.values()){
+                if ( this.visit(ctx.simpleType()) == type)
+                    exist = true;
+            }
+            if (!exist)
+                System.out.println("\"" +this.visit(ctx.simpleType()) + "\"" + " No es tipo reconocido");
+        }
+        return typeDeclaration;
     }
 
     @Override public Object visitVariableDeclarationAST(miParser.VariableDeclarationASTContext ctx) {
@@ -167,6 +214,10 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             typeAssign = this.visit(ctx.expression());
 
             if (typeAssign != null){
+                if(typeAssign == Type.INTARREGLO || typeAssign == Type.STRINGARREGLO || typeAssign == Type.BOOLEANARREGLO){
+                    Ident arrayId = tabla.buscar(ctx.ID().getText());
+                    arrayId.isInitialize = true;
+                }
                 if ( attr == Type.BOOLEAN){
                     if (typeAssign != Type.TRUE){
                         if (typeAssign != Type.FALSE)
@@ -272,19 +323,22 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     }
             }
             if (id != null) {
-                if (exprType2 != null) {
-                    if (id.type == Type.INTARREGLO)
-                        if (exprType2 != Type.INT)
-                            System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
-                    if (id.type == Type.STRINGARREGLO)
-                        if (exprType2 != Type.STRING)
-                            System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
-                    if (id.type == Type.BOOLEANARREGLO)
-                        if (exprType2 != Type.BOOLEAN)
-                            if (exprType2 != Type.TRUE)
-                                if (exprType2 != Type.FALSE)
-                                    System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
-                }
+                if (id.isInitialize){
+                    if (exprType2 != null) {
+                        if (id.type == Type.INTARREGLO)
+                            if (exprType2 != Type.INT)
+                                System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
+                        if (id.type == Type.STRINGARREGLO)
+                            if (exprType2 != Type.STRING)
+                                System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
+                        if (id.type == Type.BOOLEANARREGLO)
+                            if (exprType2 != Type.BOOLEAN)
+                                if (exprType2 != Type.TRUE)
+                                    if (exprType2 != Type.FALSE)
+                                        System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
+                    }
+                }else
+                    System.out.println("\""+id.tok.getText()+"\": " + "No ha sido inicializado");
             }else
                 System.out.println("\""+ctx.ID().getText()+"\": " + "No se reconoce");
 
@@ -977,24 +1031,42 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             this.visit(c);
         return null;
     }
-
+    int cantImpErrArray;
     @Override public Object visitArrayLookupAST(miParser.ArrayLookupASTContext ctx) {
         Ident id = tabla.buscar(ctx.ID().getText());
         if (id != null){
-            if (id.type == Type.INTARREGLO)
-                return Type.INT;
-            if (id.type == Type.STRINGARREGLO)
-                return Type.STRING;
-            if (id.type == Type.BOOLEANARREGLO)
-                return Type.BOOLEAN;
+            if (id.isInitialize) {
+                if (id.type == Type.INTARREGLO)
+                    return Type.INT;
+                if (id.type == Type.STRINGARREGLO)
+                    return Type.STRING;
+                if (id.type == Type.BOOLEANARREGLO)
+                    return Type.BOOLEAN;
+            }else{
+                if (cantImpErrArray < 1){
+                    cantImpErrArray++;
+                    System.out.println("\""+id.tok.getText()+"\": " + "No ha sido inicializado");
+                }
+                return ctx.ID();
+            }
         }
         return ctx.ID();
     }
-
+    int cantImpErrArray2;
     @Override public Object visitArrayLengthAST(miParser.ArrayLengthASTContext ctx) {
         Ident id = tabla.buscar(ctx.ID().getText());
-        if (id != null)
-            return Type.INT;
+        if (id != null){
+            if (id.isInitialize)
+                return Type.INT;
+            else{
+                if (cantImpErrArray2 < 1){
+                    cantImpErrArray2++;
+                    System.out.println("\""+id.tok.getText()+"\": " + "No ha sido inicializado");
+                }
+                return ctx.ID();
+            }
+
+        }
         return ctx.ID();
     }
 

@@ -8,5 +8,6 @@ public enum Type {
     STRING,
     INTARREGLO,
     STRINGARREGLO,
-    BOOLEANARREGLO
+    BOOLEANARREGLO,
+    CLASS
 }

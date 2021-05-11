@@ -1,4 +1,22 @@
 
-int[] arreglo;
 
-arreglo[1] = 1;
+int x = 2;
+
+boolean y = false;
+
+string t = "t";
+
+
+
+class hola{
+    int a = 1;
+    string b = "2";
+    boolean p = false;
+};
+
+class testClass{
+    int j = 1;
+    string k = "2";
+    boolean m = false;
+};
+

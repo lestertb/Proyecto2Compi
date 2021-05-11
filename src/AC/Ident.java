@@ -9,7 +9,7 @@ public class Ident{
     Type type;
     int nivel;
     int valor;
-    //boolean isInitialize;
+    boolean isInitialize;
     ParserRuleContext declCtx;
 
     public Ident(Token t, Type tp, int nivelActual, ParserRuleContext decl){
@@ -17,7 +17,7 @@ public class Ident{
         type = tp;
         nivel=nivelActual;
         valor = 0;
-        //isInitialize= false;
+        isInitialize= false;
         declCtx=decl;
     }
 
