@@ -1,8 +1,4 @@
 
+int[] arreglo;
 
-int x = 2 / "2";
-
-
-
-
-
+arreglo[1] = 1;

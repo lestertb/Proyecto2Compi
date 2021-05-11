@@ -21,7 +21,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         for( miParser.StatementContext context : ctx.statement()) {
             this.visit(context);
         }
-        //tabla.imprimir();
+        tabla.imprimir();
         tabla.closeScope();
         return null;
     }
@@ -42,8 +42,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitArrayAssignmentST(miParser.ArrayAssignmentSTContext ctx) {
-        this.visit(ctx.arrayAssignment());
-        return null;
+        return this.visit(ctx.arrayAssignment());
     }
 
     @Override public Object visitPrintStatementST(miParser.PrintStatementSTContext ctx) {
@@ -71,8 +70,17 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitReturnStatementST(miParser.ReturnStatementSTContext ctx) {
-        visit(ctx.returnStatement());
-        return null;
+        Object returnExpr = this.visit(ctx.returnStatement());
+        boolean exist = false;
+        for (Type type: Type.values()){
+            if (returnExpr == type) {
+                exist = true;
+                break;
+            }
+        }
+        if (!exist)
+            System.out.println("\"" + returnExpr + "\"" + " No se reconoce");
+        return this.visit(ctx.returnStatement());
     }
 
     @Override public Object visitFunctionDeclarationST(miParser.FunctionDeclarationSTContext ctx) {
@@ -127,8 +135,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitReturnStatementAST(miParser.ReturnStatementASTContext ctx) {
-        this.visit(ctx.expression());
-        return null;
+        return  this.visit(ctx.expression());
     }
 
     @Override public Object visitPrintStatementAST(miParser.PrintStatementASTContext ctx) {
@@ -182,7 +189,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             if (!exist)
                 System.out.println("\"" +this.visit(ctx.type()) + "\"" + " No es tipo reconocido");
         }
-        return null;
+        return ctx;
     }
 
     @Override public Object visitSimpleTypeTAST(miParser.SimpleTypeTASTContext ctx) {
@@ -246,20 +253,26 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
     int cantImpArray;
     @Override public Object visitArrayAssignmentAST(miParser.ArrayAssignmentASTContext ctx) {
-        Type exprType = (Type) this.visit(ctx.expression(0));
+        Type exprType = null;
         Type exprType2 = null;
-        try {
-            Ident id = tabla.buscar(ctx.ID().getText());
-            for (int i = 1; i < ctx.expression().size(); i++) {
-                exprType2 = (Type) this.visit(ctx.expression(i));
-                if (exprType != null){
-                    if (exprType != Type.INT)
-                        if (cantImpArray < 1){
-                            cantImpArray++;
-                            System.out.println("Error en el índice del arreglo, se usó ( " + exprType + " ), " + "debería ser ( INT )");
-                        }
-                }
-
+        Ident id = null;
+        try { exprType = (Type) this.visit(ctx.expression(0)); }catch (Exception e){
+            System.out.println("\""+this.visit(ctx.expression(0))+"\": " + "No se reconoce");
+        }
+        id = tabla.buscar(ctx.ID().getText());
+        for (int i = 1; i < ctx.expression().size(); i++) {
+            try { exprType2 = (Type) this.visit(ctx.expression(i)); }catch (Exception e){
+                System.out.println("\""+this.visit(ctx.expression(i))+"\": " + "No se reconoce");
+            }
+            if (exprType != null){
+                if (exprType != Type.INT)
+                    if (cantImpArray < 1){
+                        cantImpArray++;
+                        System.out.println("Error en el índice del arreglo, se usó ( " + exprType + " ), " + "debería ser ( INT )");
+                    }
+            }
+            if (id != null) {
+                if (exprType2 != null) {
                     if (id.type == Type.INTARREGLO)
                         if (exprType2 != Type.INT)
                             System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
@@ -271,12 +284,12 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                             if (exprType2 != Type.TRUE)
                                 if (exprType2 != Type.FALSE)
                                     System.out.println("Tipos incompatibles para la asignación ( " + id.tok.getText() + ": " + id.type + ", " + exprType2 + " )");
+                }
+            }else
+                System.out.println("\""+ctx.ID().getText()+"\": " + "No se reconoce");
 
-            }
-        }catch (Exception e){
-            System.out.println(ctx.ID().getText() + ": No ha sido declarado" + ", " + this.visit(ctx.expression(1)) +": "+ "No ha sido declarado");
         }
-        return exprType;
+        return ctx;
     }
     int cantImErr = 0;
     @Override public Object visitExpressionAST(miParser.ExpressionASTContext ctx) {
@@ -467,7 +480,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                         }else{
                             if (cantImpErrorSEME < 1) {
                                 cantImpErrorSEME++;
-                                System.out.println("Error en uso de operadores aditivos( + ) para: ( " + termType + ", " + termType2 + " )");
+                                System.out.println("Error en uso de operadores aditivos( - ) para: ( " + termType + ", " + termType2 + " )");
                             }
                             return termType;
                         }
@@ -486,9 +499,11 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     sonVariables=2;
                     try{ Type test = (Type)termDiffType;}
                     catch (Exception e2){
-                        cantImp++;
-                        System.out.println("Error en uso de operadores aditivos para: ( " + termDiffType+ ", "+ termDiffType2 + " )");
-                        System.out.println("Error, " + termDiffType + ": No se reconoce");
+                        if (cantImp < 1) {
+                            cantImp++;
+                            System.out.println("Error en uso de operadores aditivos para: ( " + termDiffType + ", " + termDiffType2 + " )");
+                            System.out.println("Error, " + termDiffType + ": No se reconoce");
+                        }
                         return termDiffType;
                     }
                 }
@@ -894,13 +909,11 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitArrayLookupFAST(miParser.ArrayLookupFASTContext ctx) {
-        this.visit(ctx.arrayLookup());
-        return null;
+        return this.visit(ctx.arrayLookup());
     }
 
     @Override public Object visitArrayLengthFAST(miParser.ArrayLengthFASTContext ctx) {
-        this.visit(ctx.arrayLength());
-        return null;
+        return this.visit(ctx.arrayLength());
     }
 
     @Override public Object visitSubExpressionFAST(miParser.SubExpressionFASTContext ctx) {
@@ -966,11 +979,24 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitArrayLookupAST(miParser.ArrayLookupASTContext ctx) {
-        this.visit(ctx.expression());
-        return null;
+        Ident id = tabla.buscar(ctx.ID().getText());
+        if (id != null){
+            if (id.type == Type.INTARREGLO)
+                return Type.INT;
+            if (id.type == Type.STRINGARREGLO)
+                return Type.STRING;
+            if (id.type == Type.BOOLEANARREGLO)
+                return Type.BOOLEAN;
+        }
+        return ctx.ID();
     }
 
-    @Override public Object visitArrayLengthAST(miParser.ArrayLengthASTContext ctx) { return null; }
+    @Override public Object visitArrayLengthAST(miParser.ArrayLengthASTContext ctx) {
+        Ident id = tabla.buscar(ctx.ID().getText());
+        if (id != null)
+            return Type.INT;
+        return ctx.ID();
+    }
 
     @Override public Object visitBoolLiteral(miParser.BoolLiteralContext ctx) {
         return ctx.getText();
