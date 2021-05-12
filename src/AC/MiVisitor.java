@@ -2,15 +2,19 @@ package AC;
 
 import generated.miParser;
 import generated.miParserBaseVisitor;
+import org.antlr.v4.runtime.Token;
+
+import java.util.LinkedList;
 
 public class MiVisitor extends miParserBaseVisitor<Object> {
 
     private TablaSimbolos tabla;
-    private TablaSimbolos tablaClass;
+    private TablaSimbolosClass tablaClass;
+    private LinkedList<TablaSimbolosClass> listClasses;
 
     public MiVisitor() {
         tabla = new TablaSimbolos();
-        tablaClass = new TablaSimbolos();
+        listClasses = new LinkedList<TablaSimbolosClass>();
     }
 
     @Override public Object visitProgramAST(miParser.ProgramASTContext ctx) {
@@ -29,8 +33,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitClassDeclarationST(miParser.ClassDeclarationSTContext ctx) {
-        this.visit(ctx.classDeclaration());
-        return null;
+        return this.visit(ctx.classDeclaration());
     }
 
     @Override public Object visitAssignmentST(miParser.AssignmentSTContext ctx) {
@@ -91,8 +94,9 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
     @Override public Object visitBlockAST(miParser.BlockASTContext ctx) {
         tabla.openScope();
-        for(miParser.StatementContext c: ctx.statement())
-            this.visit(c);
+        for(miParser.StatementContext c: ctx.statement()){
+                this.visit(c);
+        }
         tabla.imprimir();
         tabla.closeScope();
         return ctx;
@@ -147,15 +151,14 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     @Override public Object visitPrintStatementAST(miParser.PrintStatementASTContext ctx) {
         return this.visit(ctx.expression());
     }
-
     @Override public Object visitClassDeclarationAST(miParser.ClassDeclarationASTContext ctx) {
+        tablaClass = new TablaSimbolosClass();
         tablaClass.nombreClass = ctx.ID().getText();
         tablaClass.openScope();
         for(miParser.ClassVariableDeclarationContext c : ctx.classVariableDeclaration())
             this.visit(c);
-        tabla.insertarClass(tablaClass);
-        tablaClass.imprimirTablaClass(tablaClass.nombreClass);
-        tablaClass.closeScope();
+        tablaClass.imprimir();
+        listClasses.addFirst(tablaClass);
         return ctx;
     }
 
@@ -233,9 +236,17 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             }
        }catch (Exception e){
             boolean exist = false;
-            for (Type type: Type.values()){
-                if ( this.visit(ctx.type()) == type)
+            for (TablaSimbolosClass clase: listClasses) {
+                if ((this.visit(ctx.type()).toString()).equals(clase.nombreClass)){
+                    tabla.insertarIdentClass(ctx.ID().getText(),clase.nombreClass);
                     exist = true;
+                }
+                else{
+                    for (Type type: Type.values()){
+                        if ( this.visit(ctx.type()) == type)
+                            exist = true;
+                    }
+                }
             }
             if (!exist)
                 System.out.println("\"" +this.visit(ctx.type()) + "\"" + " No es tipo reconocido");
@@ -279,11 +290,60 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
     @Override public Object visitAssignmentAST(miParser.AssignmentASTContext ctx) {
         Ident id = tabla.buscar(ctx.ID().get(0).toString());
+        IdentClass idClass = tabla.buscarClass(ctx.ID().get(0).toString());
         if (id == null){
-            System.out.println("\""+ctx.ID().get(0).toString()+"\" no ha sido declarado");
-            //throw new RuntimeException();
+            if (idClass == null){
+                System.out.println("\""+ctx.ID().get(0).toString()+"\" no ha sido declarado");
+                //throw new RuntimeException();
+            }else{
+                Object instaClass = ctx.ID(0);
+                Object varInClass = ctx.ID(1);
+                if(varInClass == null) {
+                    try {
+                        Object test1 = this.visit(ctx.expression());
+                        String test2 = ((String) test1).replace("new", "");
+                        String assignExpr = test2.replace("()", "");
+                        boolean exist = false;
+                        for (TablaSimbolosClass clase : listClasses) {
+                            if (assignExpr.equals(clase.nombreClass)) {
+                                exist = true;
+                            }
+                        }
+                        if (!exist)
+                            System.out.println("\"" + assignExpr + "\" no se reconoce como clase");
+                    }catch (Exception e){
+                        System.out.println("Error con la minipulación de la instancia");
+                    }
+                }else{
+                    for (TablaSimbolosClass clase : listClasses) {
+                        if ((idClass.type).equals(clase.nombreClass)) {
+                            for (int i = 0; i < clase.tablaClass.size(); i++) {
+                                if ((varInClass.toString()).equals(((Ident) clase.tablaClass.get(i)).tok.getText())){
+                                    Type expreIzq = ((Ident) clase.tablaClass.get(i)).type;
+                                    Type expreDer = (Type) this.visit(ctx.expression());
+                                    if (expreDer != null){
+                                        if ( expreIzq == Type.BOOLEAN){
+                                            if (expreDer != Type.TRUE){
+                                                if (expreDer != Type.FALSE)
+                                                    if (expreDer != Type.BOOLEAN)
+                                                        System.out.println("Tipos incompatibles para la asignación: ( " + expreIzq+ ", "+expreDer + " )");
+                                            }
+                                        }
+                                        else if (expreIzq != expreDer){
+                                            System.out.println("Tipos incompatibles para la asignación ( " + expreIzq+ ", "+expreDer + " )");
+                                        }
+                                    }else {
+                                        System.out.println("Tipos incompatibles para la asignación ( " + expreIzq+ ", "+ " Dato no reconocido" + " )");
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
         }else{
-            Object assignExpr = visit(ctx.expression());
+            Object assignExpr = this.visit(ctx.expression());
             if (assignExpr != null){
                 if ( id.type == Type.BOOLEAN){
                     if (assignExpr != Type.TRUE){
@@ -979,8 +1039,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitAllocationExpressionFAST(miParser.AllocationExpressionFASTContext ctx) {
-        this.visit(ctx.allocationExpression());
-        return null;
+        return this.visit(ctx.allocationExpression());
     }
 
     @Override public Object visitUnaryFAST(miParser.UnaryFASTContext ctx) {
@@ -995,7 +1054,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitAllocationExpressionAST(miParser.AllocationExpressionASTContext ctx) {
-        return null;
+        return ctx.ID();
     }
     int impCantErr;
     @Override public Object visitArrayAllocationExpressionAST(miParser.ArrayAllocationExpressionASTContext ctx) {

@@ -1,6 +1,5 @@
 package AC;
 
-import generated.miParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
@@ -12,7 +11,6 @@ public class TablaSimbolos {
 
     public int nivelActual;
 
-    public String nombreClass;
 
     public TablaSimbolos() {
         tabla = new LinkedList<Object>();
@@ -26,21 +24,40 @@ public class TablaSimbolos {
         tabla.addFirst(i);
     }
 
-    public void insertarClass(TablaSimbolos tablaClass)
+    public void insertarIdentClass(String id, String tipo)
     {
-        tabla.addFirst(tablaClass);
+        //no se puede insertar un elemento repetido en el mismo nivel
+        IdentClass i = new IdentClass(id,tipo,nivelActual);
+        tabla.addFirst(i);
     }
+
 
     public Ident buscar(String nombre)
     {
         Ident temp = null;
         try {
             for(Object id : tabla)
-                if (((Ident)id).tok.getText().equals(nombre))
-                    return ((Ident)id);
+                if (id.getClass() != IdentClass.class){
+                    if (((Ident)id).tok.getText().equals(nombre))
+                        return ((Ident)id);
+                }
         } catch (Exception ignored){ }
         return temp;
     }
+
+    public IdentClass buscarClass(String nombre)
+    {
+        IdentClass temp = null;
+        try {
+            for(Object id : tabla)
+                if (id.getClass() != Ident.class){
+                    if (((IdentClass)id).nombre.equals(nombre))
+                        return ((IdentClass)id);
+                }
+        } catch (Exception ignored){ }
+        return temp;
+    }
+
 
     public void openScope(){
         nivelActual++;
@@ -48,11 +65,14 @@ public class TablaSimbolos {
 
     public void closeScope(){
         try{
+            tabla.removeIf(n -> (((IdentClass)n).nivel == nivelActual));
+            nivelActual--;
+        }catch (Exception e){
             tabla.removeIf(n -> (((Ident)n).nivel == nivelActual));
             nivelActual--;
-        }catch (Exception ignored){ }
-
+        }
     }
+
 
     //Aquí intentar devolver las variables que se crearon segun el nombre de la clase para asignarlas a una variable
     //Y poder accederla tipo var.x
@@ -63,21 +83,15 @@ public class TablaSimbolos {
     public void imprimir() {
         System.out.println("----- INICIO TABLA ------");
         for (int i = 0; i < tabla.size(); i++) {
-            if (tabla.get(i).getClass() != TablaSimbolos.class){
+            try {
                 Token s = (Token) ((Ident) tabla.get(i)).tok;
                 System.out.println("Nombre: " + s.getText() + " - " +"Nivel: " + ((Ident) tabla.get(i)).nivel + " - " +" Tipo: "+((Ident) tabla.get(i)).type);
+            } catch (Exception e){
+                String s = ((IdentClass) tabla.get(i)).nombre;
+                System.out.println("Nombre: " + s + " - " +"Nivel: " + ((IdentClass) tabla.get(i)).nivel + " - " +" Tipo: "+((IdentClass) tabla.get(i)).type);
             }
         }
         System.out.println("----- FIN TABLA ------\n");
-    }
-
-    public void imprimirTablaClass(String nombreClass) {
-        System.out.println("----- INICIO TABLA " + nombreClass +" ------");
-        for (int i = 0; i < tabla.size(); i++) {
-            Token s = (Token) ((Ident) tabla.get(i)).tok;
-            System.out.println("Nombre: " + s.getText() + " - " +"Nivel: " + ((Ident) tabla.get(i)).nivel + " - " +" Tipo: "+((Ident) tabla.get(i)).type);
-        }
-        System.out.println("----- FIN TABLA " + nombreClass +" ------\n");
     }
 
 }

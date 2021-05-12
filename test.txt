@@ -2,21 +2,25 @@
 
 int x = 2;
 
-boolean y = false;
-
-string t = "t";
-
-
-
 class hola{
-    int a = 1;
-    string b = "2";
-    boolean p = false;
+    int test = 1;
+    string k = "1";
 };
 
-class testClass{
-    int j = 1;
-    string k = "2";
-    boolean m = false;
+class test{
+    int v = 1;
+    string b = "1";
 };
+
+
+hola inst = new hola();
+
+inst.k = "b";
+
+test classtest = new test();
+
+classtest.v = false;
+
+
+
 
