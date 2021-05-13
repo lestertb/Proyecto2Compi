@@ -1,26 +1,5 @@
 
 
-int x = 2;
-
-class hola{
-    int test = 1;
-    string k = "1";
-};
-
-class test{
-    int v = 1;
-    string b = "1";
-};
-
-
-hola inst = new hola();
-
-inst.k = "b";
-
-test classtest = new test();
-
-classtest.v = false;
-
 
 
 

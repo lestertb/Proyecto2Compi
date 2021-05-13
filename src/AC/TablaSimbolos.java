@@ -64,20 +64,8 @@ public class TablaSimbolos {
     }
 
     public void closeScope(){
-        try{
-            tabla.removeIf(n -> (((IdentClass)n).nivel == nivelActual));
-            nivelActual--;
-        }catch (Exception e){
-            tabla.removeIf(n -> (((Ident)n).nivel == nivelActual));
-            nivelActual--;
-        }
-    }
-
-
-    //Aquí intentar devolver las variables que se crearon segun el nombre de la clase para asignarlas a una variable
-    //Y poder accederla tipo var.x
-    public void obtenerListaVariables(){
-
+        tabla.removeIf(n -> ( (n.getClass() != IdentClass.class) && (((Ident)n).nivel == nivelActual)));
+        nivelActual--;
     }
 
     public void imprimir() {

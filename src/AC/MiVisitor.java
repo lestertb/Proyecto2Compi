@@ -187,13 +187,14 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+typeAssign + " )");
                 }
             }else {
+
                 System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+ " Dato no reconocido" + " )");
             }
 
         } catch (Exception e){
             boolean exist = false;
             for (Type type: Type.values()){
-                if ( this.visit(ctx.simpleType()) == type)
+                if (this.visit(ctx.simpleType()) == type)
                     exist = true;
             }
             if (!exist)
@@ -235,21 +236,35 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                 System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+ " Dato no reconocido" + " )");
             }
        }catch (Exception e){
-            boolean exist = false;
-            for (TablaSimbolosClass clase: listClasses) {
-                if ((this.visit(ctx.type()).toString()).equals(clase.nombreClass)){
-                    tabla.insertarIdentClass(ctx.ID().getText(),clase.nombreClass);
-                    exist = true;
-                }
-                else{
-                    for (Type type: Type.values()){
-                        if ( this.visit(ctx.type()) == type)
-                            exist = true;
+            Object expre = ctx.expression();
+                for (TablaSimbolosClass clase: listClasses) {
+                    if ((this.visit(ctx.type()).toString()).equals(clase.nombreClass)){
+                        tabla.insertarIdentClass(ctx.ID().getText(),clase.nombreClass);
+                        if (expre != null){
+                            String expreIzq = ctx.type().getText();
+                            String test1 = ctx.expression().getText();
+                            String test2 = test1.replace("new", "");
+                            String expreDer = test2.replace("()", "");
+                            if (expreIzq.equals(expreDer)){
+                                IdentClass classId = tabla.buscarClass(ctx.ID().getText());
+                                classId.isInitialize = true;
+                            }else
+                                System.out.println("Error en la inicialización de la instancia, no coincide ( " + expreIzq +", " + expreDer +" )");
+                        }
                     }
                 }
+            boolean exist = false;
+            for (Type type: Type.values()){
+                if ( this.visit(ctx.type()) == type)
+                    exist = true;
             }
-            if (!exist)
+            for (TablaSimbolosClass clase: listClasses) {
+                if (this.visit(ctx.type()).toString().equals(clase.nombreClass))
+                    exist = true;
+            }
+            if (!exist){
                 System.out.println("\"" +this.visit(ctx.type()) + "\"" + " No es tipo reconocido");
+            }
         }
         return ctx;
     }
@@ -295,66 +310,168 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             if (idClass == null){
                 System.out.println("\""+ctx.ID().get(0).toString()+"\" no ha sido declarado");
                 //throw new RuntimeException();
-            }else{
-                Object instaClass = ctx.ID(0);
-                Object varInClass = ctx.ID(1);
-                if(varInClass == null) {
-                    try {
-                        Object test1 = this.visit(ctx.expression());
-                        String test2 = ((String) test1).replace("new", "");
-                        String assignExpr = test2.replace("()", "");
-                        boolean exist = false;
-                        for (TablaSimbolosClass clase : listClasses) {
-                            if (assignExpr.equals(clase.nombreClass)) {
-                                exist = true;
+            }else {
+                IdentClass classId = tabla.buscarClass(idClass.nombre);
+                if (classId.isInitialize) {
+                    Object varInClass = ctx.ID(1);
+                    if (varInClass == null) {
+                        try {
+                            Object test1 = this.visit(ctx.expression());
+                            String test2 = ((String) test1).replace("new", "");
+                            String assignExpr = test2.replace("()", "");
+                            boolean exist = false;
+                            for (TablaSimbolosClass clase : listClasses) {
+                                if (assignExpr.equals(clase.nombreClass)) {
+                                    exist = true;
+                                    break;
+                                }
                             }
+                            if (!exist)
+                                System.out.println("\"" + assignExpr + "\" no se reconoce como clase");
+                        } catch (Exception e) {
+                            System.out.println("Error con la minipulación de la instancia");
                         }
-                        if (!exist)
-                            System.out.println("\"" + assignExpr + "\" no se reconoce como clase");
-                    }catch (Exception e){
-                        System.out.println("Error con la minipulación de la instancia");
-                    }
-                }else{
-                    for (TablaSimbolosClass clase : listClasses) {
-                        if ((idClass.type).equals(clase.nombreClass)) {
-                            for (int i = 0; i < clase.tablaClass.size(); i++) {
-                                if ((varInClass.toString()).equals(((Ident) clase.tablaClass.get(i)).tok.getText())){
-                                    Type expreIzq = ((Ident) clase.tablaClass.get(i)).type;
-                                    Type expreDer = (Type) this.visit(ctx.expression());
-                                    if (expreDer != null){
-                                        if ( expreIzq == Type.BOOLEAN){
-                                            if (expreDer != Type.TRUE){
-                                                if (expreDer != Type.FALSE)
-                                                    if (expreDer != Type.BOOLEAN)
-                                                        System.out.println("Tipos incompatibles para la asignación: ( " + expreIzq+ ", "+expreDer + " )");
+                    } else {
+                        Type expreIzq1 = null;
+                        try {
+                            boolean existVarInClass = false;
+                            for (TablaSimbolosClass clase : listClasses) {
+                                if ((idClass.type).equals(clase.nombreClass)) {
+                                    for (int i = 0; i < clase.tablaClass.size(); i++) {
+                                        if ((varInClass.toString()).equals(((Ident) clase.tablaClass.get(i)).tok.getText())) {
+                                            existVarInClass = true;
+                                            expreIzq1 = ((Ident) clase.tablaClass.get(i)).type;
+                                            Type expreDer = (Type) this.visit(ctx.expression());
+                                            if (expreDer != null) {
+                                                if (expreIzq1 == Type.BOOLEAN) {
+                                                    if (expreDer != Type.TRUE) {
+                                                        if (expreDer != Type.FALSE)
+                                                            if (expreDer != Type.BOOLEAN)
+                                                                System.out.println("Tipos incompatibles para la asignación: ( " + expreIzq1 + ", " + expreDer + " )");
+                                                    }
+                                                } else if (expreIzq1 != expreDer) {
+                                                    System.out.println("Tipos incompatibles para la asignación ( " + expreIzq1 + ", " + expreDer + " )");
+                                                }
+                                            } else {
+                                                System.out.println("Tipos incompatibles para la asignación ( " + expreIzq1 + ", " + " Dato no reconocido" + " )");
                                             }
                                         }
-                                        else if (expreIzq != expreDer){
-                                            System.out.println("Tipos incompatibles para la asignación ( " + expreIzq+ ", "+expreDer + " )");
-                                        }
-                                    }else {
-                                        System.out.println("Tipos incompatibles para la asignación ( " + expreIzq+ ", "+ " Dato no reconocido" + " )");
+
                                     }
                                 }
-
                             }
+                            if (!existVarInClass)
+                                System.out.println("\"" + varInClass + "\"" + " no se reconoce como variable de la instancia: " + idClass.nombre);
+                        }catch (Exception e) {
+                            try{
+                                Object expre = this.visit(ctx.expression());
+                                String[] parts = (expre.toString()).split("\\.");
+                                String partClassName = parts[0];
+                                String partVarInClassName = parts[1];
+                                IdentClass idClassExpr = tabla.buscarClass(partClassName);
+                                boolean existVarInClass2 = false;
+                                for (TablaSimbolosClass clase : listClasses) {
+                                    if ((idClassExpr.type).equals(clase.nombreClass)) {
+                                        for (int i = 0; i < clase.tablaClass.size(); i++) {
+                                            if ((partVarInClassName).equals(((Ident) clase.tablaClass.get(i)).tok.getText())) {
+                                                existVarInClass2 = true;
+                                                Type expreDer = ((Ident) clase.tablaClass.get(i)).type;
+                                                if (expreDer != null) {
+                                                    if (expreIzq1 == Type.BOOLEAN) {
+                                                        if (expreDer != Type.TRUE) {
+                                                            if (expreDer != Type.FALSE)
+                                                                if (expreDer != Type.BOOLEAN)
+                                                                    System.out.println("Tipos incompatibles para la asignación: ( " + expreIzq1 + ", " + expreDer + " )");
+                                                        }
+                                                    } else if (expreIzq1 != expreDer) {
+                                                        System.out.println("Tipos incompatibles para la asignación ( " + expreIzq1 + ", " + expreDer + " )");
+                                                    }
+                                                } else {
+                                                    System.out.println("Tipos incompatibles para la asignación ( " + expreIzq1 + ", " + " Dato no reconocido" + " )");
+                                                }
+
+                                            }
+
+                                        }
+                                    }
+                                }
+                                if (!existVarInClass2)
+                                    System.out.println("\"" + partVarInClassName + "\"" + " no se reconoce como variable de la instancia: " + partClassName);
+                            }catch (Exception e2){
+                                System.out.println("Error en la asignación de clases");
+                            }
+
                         }
                     }
-                }
+                }else
+                    System.out.println("La instancia: " + idClass.nombre + " No ha sido inicializada");
             }
+
         }else{
             Object assignExpr = this.visit(ctx.expression());
             if (assignExpr != null){
-                if ( id.type == Type.BOOLEAN){
-                    if (assignExpr != Type.TRUE){
-                        if (assignExpr != Type.FALSE)
-                            if (assignExpr != Type.BOOLEAN)
-                                System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+assignExpr + " )");
+                boolean pasa = false;
+                try{
+                    String[] parts = (assignExpr.toString()).split("\\.");
+                    String partClassName = parts[0];
+                    String partVarInClassName = parts[1];
+                    IdentClass classId = tabla.buscarClass(partClassName);
+                    pasa = true;
+                }catch (Exception ignored){}
+
+                if (pasa){
+
+                    try{
+                        Object expre = this.visit(ctx.expression());
+                        String[] parts = (expre.toString()).split("\\.");
+                        String partClassName = parts[0];
+                        String partVarInClassName = parts[1];
+                        IdentClass idClassExpr = tabla.buscarClass(partClassName);
+                        boolean existVarInClass2 = false;
+                        for (TablaSimbolosClass clase : listClasses) {
+                            if ((idClassExpr.type).equals(clase.nombreClass)) {
+                                for (int i = 0; i < clase.tablaClass.size(); i++) {
+                                    if ((partVarInClassName).equals(((Ident) clase.tablaClass.get(i)).tok.getText())) {
+                                        existVarInClass2 = true;
+                                        Type expreDer = ((Ident) clase.tablaClass.get(i)).type;
+                                        if (expreDer != null) {
+                                            if (id.type == Type.BOOLEAN) {
+                                                if (expreDer != Type.TRUE) {
+                                                    if (expreDer != Type.FALSE)
+                                                        if (expreDer != Type.BOOLEAN)
+                                                            System.out.println("Tipos incompatibles para la asignación: ( " + id.type + ", " + expreDer + " )");
+                                                }
+                                            } else if (id.type != expreDer) {
+                                                System.out.println("Tipos incompatibles para la asignación ( " + id.type + ", " + expreDer + " )");
+                                            }
+                                        } else {
+                                            System.out.println("Tipos incompatibles para la asignación ( " + id.type + ", " + " Dato no reconocido" + " )");
+                                        }
+
+                                    }
+
+                                }
+                            }
+                        }
+                        if (!existVarInClass2)
+                            System.out.println("\"" + partVarInClassName + "\"" + " no se reconoce como variable de la instancia: " + partClassName);
+                    }catch (Exception e2){
+                        System.out.println("Error en la asignación de clases");
+                    }
+
+                }else{
+                    if ( id.type == Type.BOOLEAN){
+                        if (assignExpr != Type.TRUE){
+                            if (assignExpr != Type.FALSE)
+                                if (assignExpr != Type.BOOLEAN)
+                                    System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+assignExpr + " )");
+                        }
+                    }
+                    else if (id.type != assignExpr){
+                        System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+assignExpr + " )");
                     }
                 }
-                else if (id.type != assignExpr){
-                    System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+assignExpr + " )");
-                }
+
             }else {
                 System.out.println("Tipos incompatibles para la asignación ( " + id.type+ ", "+ " Dato no reconocido" + " )");
             }
@@ -372,8 +489,58 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         }
         id = tabla.buscar(ctx.ID().getText());
         for (int i = 1; i < ctx.expression().size(); i++) {
-            try { exprType2 = (Type) this.visit(ctx.expression(i)); }catch (Exception e){
-                System.out.println("\""+this.visit(ctx.expression(i))+"\": " + "No se reconoce");
+            try {
+                exprType2 = (Type) this.visit(ctx.expression(i));
+            }catch (Exception e){
+                try{
+                    if (id != null) {
+                        Object expre = this.visit(ctx.expression(i));
+                        String[] parts = (expre.toString()).split("\\.");
+                        String partClassName = parts[0];
+                        String partVarInClassName = parts[1];
+                        IdentClass idClassExpr = tabla.buscarClass(partClassName);
+                        boolean existVarInClass2 = false;
+                        for (TablaSimbolosClass clase : listClasses) {
+                            if ((idClassExpr.type).equals(clase.nombreClass)) {
+                                for (int index = 0; index < clase.tablaClass.size(); index++) {
+                                    if ((partVarInClassName).equals(((Ident) clase.tablaClass.get(index)).tok.getText())) {
+                                        existVarInClass2 = true;
+                                        Type expreDer = ((Ident) clase.tablaClass.get(index)).type;
+                                        if (expreDer != null) {
+                                            if (id.isInitialize){
+
+                                                if (id.type == Type.INTARREGLO)
+                                                    if (expreDer != Type.INT)
+                                                        System.out.println("Tipos incompatibles para la asignación: ( " + id.tok.getText() + ": " + id.type + ", " + expreDer + " )");
+                                                if (id.type == Type.STRINGARREGLO)
+                                                    if (expreDer != Type.STRING)
+                                                        System.out.println("Tipos incompatibles para la asignación: ( " + id.tok.getText() + ": " + id.type + ", " + expreDer + " )");
+                                                if (id.type == Type.BOOLEANARREGLO)
+                                                    if (expreDer != Type.BOOLEAN)
+                                                        if (expreDer != Type.TRUE)
+                                                            if (expreDer != Type.FALSE)
+                                                                System.out.println("Tipos incompatibles para la asignación: ( " + id.tok.getText() + ": " + id.type + ", " + expreDer + " )");
+
+                                            }else
+                                                System.out.println("\""+id.tok.getText()+"\": " + "No ha sido inicializado");
+                                        } else {
+                                            System.out.println("Tipos incompatibles para la asignación ( " + id.type + ", " + " Dato no reconocido" + " )");
+                                        }
+
+                                    }
+
+                                }
+                            }
+                        }
+                        if (!existVarInClass2)
+                            System.out.println("\"" + partVarInClassName + "\"" + " no se reconoce como variable de la instancia: " + partClassName);
+                    }else
+                        System.out.println("\""+ctx.ID().getText()+"\": " + "No se reconoce");
+
+                }catch (Exception e2){
+                    System.out.println("\""+this.visit(ctx.expression(i))+"\": " + "No se reconoce");
+                }
+
             }
             if (exprType != null){
                 if (exprType != Type.INT)
@@ -1014,7 +1181,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     @Override public Object visitIdFAST(miParser.IdFASTContext ctx) {
         if(ctx.ID().size() == 1)
             return ctx.ID().get(0);
-        return null; //Aquí hay que ver que hacer para cuando se use id.algo, cuando size sea 2
+        return ctx; //Aquí hay que ver que hacer para cuando se use id.algo, cuando size sea 2
     }
 
     @Override public Object visitFunctionCallFAST(miParser.FunctionCallFASTContext ctx) {
@@ -1060,11 +1227,64 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     @Override public Object visitArrayAllocationExpressionAST(miParser.ArrayAllocationExpressionASTContext ctx) {
         Object attr = this.visit(ctx.expression());
         if (attr != null){
-            if (attr != Type.INT)
-                if (impCantErr < 1){
-                    impCantErr++;
-                    System.out.println("Error en la inicialización del arreglo, se usó ( " + attr + " ), " + "debería ser ( INT )");
+            boolean pasa = false;
+            try{
+                String[] parts = (attr.toString()).split("\\.");
+                String partClassName = parts[0];
+                String partVarInClassName = parts[1];
+                IdentClass classId = tabla.buscarClass(partClassName);
+                pasa = true;
+            }catch (Exception ignored){}
+
+            if (pasa){
+
+                try{
+                    Object expre = this.visit(ctx.expression());
+                    String[] parts = (expre.toString()).split("\\.");
+                    String partClassName = parts[0];
+                    String partVarInClassName = parts[1];
+                    IdentClass idClassExpr = tabla.buscarClass(partClassName);
+                    if(idClassExpr.isInitialize){
+                        boolean existVarInClass2 = false;
+                        for (TablaSimbolosClass clase : listClasses) {
+                            if ((idClassExpr.type).equals(clase.nombreClass)) {
+                                for (int i = 0; i < clase.tablaClass.size(); i++) {
+                                    if ((partVarInClassName).equals(((Ident) clase.tablaClass.get(i)).tok.getText())) {
+                                        existVarInClass2 = true;
+                                        Type expreDer = ((Ident) clase.tablaClass.get(i)).type;
+                                        if (expreDer != null) {
+                                            if (expreDer != Type.INT){
+                                                if (impCantErr < 1){
+                                                    impCantErr++;
+                                                    System.out.println("Error en la inicialización del arreglo, se usó ( " + partClassName +"."+((Ident) clase.tablaClass.get(i)).tok.getText() + ": " + expreDer + " ), " + "debería ser ( INT )");
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                        if (!existVarInClass2)
+                            System.out.println("\"" + partVarInClassName + "\"" + " no se reconoce como variable de la instancia: " + partClassName);
+                    }else
+                        System.out.println("La instancia: " + idClassExpr.nombre + " No ha sido inicializada");
+
+                }catch (Exception e2){
+                    System.out.println("Error no se reconoce la variable en el índice del arreglo");
                 }
+
+
+            }else{
+                if (attr != Type.INT){
+                    if (impCantErr < 1){
+                        impCantErr++;
+                        System.out.println("Error en la inicialización del arreglo, se usó ( " + attr + " ), " + "debería ser ( INT )");
+                    }
+                }
+            }
+
+
         }
         String newCtx = ctx.simpleType().getText() + ctx.PCIZQ() + ctx.PCDER().getText() ;
         if(newCtx.equals("int[]"))

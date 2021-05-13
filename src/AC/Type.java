@@ -9,5 +9,5 @@ public enum Type {
     INTARREGLO,
     STRINGARREGLO,
     BOOLEANARREGLO,
-    CLASS
+    VOID
 }
