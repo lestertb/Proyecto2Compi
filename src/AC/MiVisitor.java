@@ -176,18 +176,32 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             }
             typeAssign = this.visit(ctx.expression());
             if (typeAssign != null){
-                if ( typeDeclaration == Type.BOOLEAN){
-                    if (typeAssign != Type.TRUE){
-                        if (typeAssign != Type.FALSE)
-                            if (typeAssign != Type.BOOLEAN)
-                                System.out.println("Tipos incompatibles para la asignación: ( " + typeDeclaration+ ", "+typeAssign + " )");
+                Ident idVar = tablaClass.buscar(typeAssign.toString());
+                if (idVar != null){
+                    if ( typeDeclaration == Type.BOOLEAN){
+                        if (idVar.type != Type.TRUE){
+                            if (idVar.type != Type.FALSE)
+                                if (idVar.type != Type.BOOLEAN)
+                                    System.out.println("Tipos incompatibles para la asignación: ( " + typeDeclaration+ ", "+ idVar.tok.getText() + ": " + idVar.type +  " )");
+                        }
+                    }
+                    else if (typeDeclaration != idVar.type){
+                        System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+ idVar.tok.getText() + ": " + idVar.type + " )");
+                    }
+                }else{
+                    if ( typeDeclaration == Type.BOOLEAN){
+                        if (typeAssign != Type.TRUE){
+                            if (typeAssign != Type.FALSE)
+                                if (typeAssign != Type.BOOLEAN)
+                                    System.out.println("Tipos incompatibles para la asignación: ( " + typeDeclaration+ ", "+typeAssign + " )");
+                        }
+                    }
+                    else if (typeDeclaration != typeAssign){
+                        System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+typeAssign + " )");
                     }
                 }
-                else if (typeDeclaration != typeAssign){
-                    System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+typeAssign + " )");
-                }
-            }else {
 
+            }else {
                 System.out.println("Tipos incompatibles para la asignación ( " + typeDeclaration+ ", "+ " Dato no reconocido" + " )");
             }
 
@@ -218,20 +232,75 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             typeAssign = this.visit(ctx.expression());
 
             if (typeAssign != null){
-                if(typeAssign == Type.INTARREGLO || typeAssign == Type.STRINGARREGLO || typeAssign == Type.BOOLEANARREGLO){
-                    Ident arrayId = tabla.buscar(ctx.ID().getText());
-                    arrayId.isInitialize = true;
-                }
-                if ( attr == Type.BOOLEAN){
-                    if (typeAssign != Type.TRUE){
-                        if (typeAssign != Type.FALSE)
-                            if (typeAssign != Type.BOOLEAN)
-                                System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+
+                boolean pasa = false;
+                try{
+                    String[] parts = (typeAssign.toString()).split("\\.");
+                    String partClassName = parts[0];
+                    String partVarInClassName = parts[1];
+                    IdentClass classId = tabla.buscarClass(partClassName);
+                    pasa = true;
+                }catch (Exception ignored){}
+
+                if (pasa){
+
+                    try{
+                        Object expre = this.visit(ctx.expression());
+                        String[] parts = (expre.toString()).split("\\.");
+                        String partClassName = parts[0];
+                        String partVarInClassName = parts[1];
+                        IdentClass idClassExpr = tabla.buscarClass(partClassName);
+                        boolean existVarInClass2 = false;
+                        for (TablaSimbolosClass clase : listClasses) {
+                            if ((idClassExpr.type).equals(clase.nombreClass)) {
+                                for (int i = 0; i < clase.tablaClass.size(); i++) {
+                                    if ((partVarInClassName).equals(((Ident) clase.tablaClass.get(i)).tok.getText())) {
+                                        existVarInClass2 = true;
+                                        Type expreDer = ((Ident) clase.tablaClass.get(i)).type;
+                                        if (expreDer != null) {
+                                            if (attr == Type.BOOLEAN) {
+                                                if (expreDer != Type.TRUE) {
+                                                    if (expreDer != Type.FALSE)
+                                                        if (expreDer != Type.BOOLEAN)
+                                                            System.out.println("Tipos incompatibles para la asignación: ( " + attr + ", " + expreDer + " )");
+                                                }
+                                            } else if (attr != expreDer) {
+                                                System.out.println("Tipos incompatibles para la asignación ( " + attr + ", " + expreDer + " )");
+                                            }
+                                        } else {
+                                            System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", " + " Dato no reconocido" + " )");
+                                        }
+
+                                    }
+
+                                }
+                            }
+                        }
+                        if (!existVarInClass2)
+                            System.out.println("\"" + partVarInClassName + "\"" + " no se reconoce como variable de la instancia: " + partClassName);
+                    }catch (Exception e2){
+                        System.out.println("Error en la asignación");
                     }
+
+                }else {
+
+                    if(typeAssign == Type.INTARREGLO || typeAssign == Type.STRINGARREGLO || typeAssign == Type.BOOLEANARREGLO){
+                        Ident arrayId = tabla.buscar(ctx.ID().getText());
+                        arrayId.isInitialize = true;
+                    }
+                    if ( attr == Type.BOOLEAN){
+                        if (typeAssign != Type.TRUE){
+                            if (typeAssign != Type.FALSE)
+                                if (typeAssign != Type.BOOLEAN)
+                                    System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+                        }
+                    }
+                    else if (attr != typeAssign){
+                        System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
+                    }
+
                 }
-                else if (attr != typeAssign){
-                    System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+typeAssign + " )");
-                }
+
             }else {
                 System.out.println("Tipos incompatibles para la asignación ( " + attr+ ", "+ " Dato no reconocido" + " )");
             }
@@ -312,6 +381,18 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                 //throw new RuntimeException();
             }else {
                 IdentClass classId = tabla.buscarClass(idClass.nombre);
+                for (TablaSimbolosClass clase: listClasses) {
+                    if ((classId.type).equals(clase.nombreClass)){
+                            String expreIzq = classId.type;
+                            String test1 = ctx.expression().getText();
+                            String test2 = test1.replace("new", "");
+                            String expreDer = test2.replace("()", "");
+                            if (expreIzq.equals(expreDer)){
+                                classId.isInitialize = true;
+                            }else
+                                System.out.println("Error en la inicialización de la instancia, no coincide ( " + expreIzq +", " + expreDer +" )");
+                    }
+                }
                 if (classId.isInitialize) {
                     Object varInClass = ctx.ID(1);
                     if (varInClass == null) {
@@ -403,8 +484,9 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
 
                         }
                     }
-                }else
+                }else{
                     System.out.println("La instancia: " + idClass.nombre + " No ha sido inicializada");
+                }
             }
 
         }else{
@@ -460,6 +542,12 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     }
 
                 }else{
+
+                    if(assignExpr == Type.INTARREGLO || assignExpr == Type.STRINGARREGLO || assignExpr == Type.BOOLEANARREGLO){
+                        Ident arrayId = tabla.buscar(ctx.ID(0).getText());
+                        arrayId.isInitialize = true;
+                    }
+
                     if ( id.type == Type.BOOLEAN){
                         if (assignExpr != Type.TRUE){
                             if (assignExpr != Type.FALSE)
@@ -1210,14 +1298,13 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitUnaryFAST(miParser.UnaryFASTContext ctx) {
-        this.visit(ctx.unary());
-        return null;
+        return this.visit(ctx.unary());
     }
 
     @Override public Object visitUnaryAST(miParser.UnaryASTContext ctx) {
         for (miParser.ExpressionContext c: ctx.expression())
             this.visit(c);
-        return null;
+        return ctx;
     }
 
     @Override public Object visitAllocationExpressionAST(miParser.AllocationExpressionASTContext ctx) {
