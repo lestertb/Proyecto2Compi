@@ -560,6 +560,7 @@ public class miParser extends Parser {
 	}
 
 	public static class FormalParamsContext extends ParserRuleContext {
+		public int cantParams = 0;
 		public FormalParamsContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -568,6 +569,7 @@ public class miParser extends Parser {
 		public FormalParamsContext() { }
 		public void copyFrom(FormalParamsContext ctx) {
 			super.copyFrom(ctx);
+			this.cantParams = ctx.cantParams;
 		}
 	}
 	public static class FormalParamsASTContext extends FormalParamsContext {
@@ -2206,6 +2208,7 @@ public class miParser extends Parser {
 	}
 
 	public static class ActualParamsContext extends ParserRuleContext {
+		public int cantParams = 0;
 		public ActualParamsContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -2214,6 +2217,7 @@ public class miParser extends Parser {
 		public ActualParamsContext() { }
 		public void copyFrom(ActualParamsContext ctx) {
 			super.copyFrom(ctx);
+			this.cantParams = ctx.cantParams;
 		}
 	}
 	public static class ActualParamsASTContext extends ActualParamsContext {

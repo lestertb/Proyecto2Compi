@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 import java.util.LinkedList;
+import java.util.List;
 
 public class TablaSimbolos {
 
@@ -20,9 +21,17 @@ public class TablaSimbolos {
     public void insertar(Token id, Type tipo, ParserRuleContext decl)
     {
         //no se puede insertar un elemento repetido en el mismo nivel
-        Ident i = new Ident(id,tipo,nivelActual,decl);
+        Ident i = new Ident(id,tipo,nivelActual,decl, null);
         tabla.addFirst(i);
     }
+
+    public void insertarMethod(Token id, Type tipo, ParserRuleContext decl, List<ParamMethod> listParamas)
+    {
+        Ident i = new Ident(id,tipo,nivelActual,decl, listParamas);
+        tabla.addFirst(i);
+    }
+
+
 
     public void insertarIdentClass(String id, String tipo)
     {

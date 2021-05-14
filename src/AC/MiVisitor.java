@@ -4,13 +4,17 @@ import generated.miParser;
 import generated.miParserBaseVisitor;
 import org.antlr.v4.runtime.Token;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class MiVisitor extends miParserBaseVisitor<Object> {
 
     private TablaSimbolos tabla;
     private TablaSimbolosClass tablaClass;
     private LinkedList<TablaSimbolosClass> listClasses;
+    List<ParamMethod> listParam = new ArrayList<ParamMethod>();
+    List<Type> listParamCall = new ArrayList<Type>();
 
     public MiVisitor() {
         tabla = new TablaSimbolos();
@@ -103,22 +107,35 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitFunctionDeclarationAST(miParser.FunctionDeclarationASTContext ctx) {
-        this.visit(ctx.type());
-        this.visit(ctx.formalParams());
+        Object attr = null;
+        if (ctx.type() != null){
+            attr = this.visit(ctx.type());
+            if (attr == Type.INT || attr == Type.STRING || attr == Type.BOOLEAN){
+                tabla.insertarMethod(ctx.ID().getSymbol(),(Type) attr,ctx, listParam);
+            }else
+                System.out.println("No se pueden crear métodos de el tipo: "+ "( " + attr +" )");
+        }
+        tabla.openScope();
+        if (ctx.formalParams() != null)
+            this.visit(ctx.formalParams());
         this.visit(ctx.block());
-        return null;
+        tabla.imprimir();
+        tabla.closeScope();
+        return ctx;
     }
 
     @Override public Object visitFormalParamsAST(miParser.FormalParamsASTContext ctx) {
-        for(miParser.FormalParamContext c: ctx.formalParam()){
-            this.visit(c);
+        listParam.clear();
+        for (int i = 0; i < ctx.formalParam().size(); i++) {
+            listParam.add((ParamMethod) this.visit(ctx.formalParam(i)));
         }
-        return null;
+        ctx.cantParams = ctx.formalParam().size();
+        return listParam;
     }
 
     @Override public Object visitFormalParamAST(miParser.FormalParamASTContext ctx) {
-        this.visit(ctx.type());
-        return null;
+        Object type = this.visit(ctx.type());
+        return new ParamMethod( ctx.ID().getText(), (Type) type);
     }
 
     @Override public Object visitWhileStatementAST(miParser.WhileStatementASTContext ctx) {
@@ -1273,8 +1290,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitFunctionCallFAST(miParser.FunctionCallFASTContext ctx) {
-        this.visit(ctx.functionCall());
-        return null;
+        return this.visit(ctx.functionCall());
     }
 
     @Override public Object visitArrayLookupFAST(miParser.ArrayLookupFASTContext ctx) {
@@ -1388,14 +1404,58 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitFunctionCallAST(miParser.FunctionCallASTContext ctx) {
-        this.visit(ctx.actualParams());
-        return null;
+        Ident id = tabla.buscar(ctx.ID().getText());
+        if (id == null){
+            System.out.println("\""+ctx.ID().getText()+"\" No es un método declarado!!!");
+        }else{
+            Object test = ctx.actualParams();
+            if (test != null){
+                this.visit(ctx.actualParams());
+                Object test2 = (( ((miParser.FunctionDeclarationASTContext) id.declCtx).formalParams()));
+                if (test2 != null){
+                    if (ctx.actualParams().cantParams != ( ((miParser.FunctionDeclarationASTContext) id.declCtx).formalParams()).cantParams){
+                        System.out.println("Error en la llamada del método, cantidad de parámetros diferente a la declaración");
+                        return id.type;
+                    }
+                }else{
+                    if (ctx.actualParams().cantParams > 0){
+                        System.out.println("Error en la llamada del método, cantidad de parámetros diferente a la declaración");
+                        return id.type;
+                    }
+                }
+            }else{
+                if ((((miParser.FunctionDeclarationASTContext) id.declCtx).formalParams()).cantParams > 0){
+                    System.out.println("Error en la llamada del método, cantidad de parámetros diferente a la declaración");
+                    return id.type;
+                }
+            }
+
+            for (int i = 0; i < id.listaParams.size(); i++) {
+                if(id.listaParams.get(i).type == Type.BOOLEAN){
+                    if(listParamCall.get(i) != Type.BOOLEAN){
+                        if(listParamCall.get(i) != Type.TRUE){
+                            if(listParamCall.get(i) != Type.FALSE){
+                                System.out.println("El tipo de los parametros no coincide");
+                            }
+                        }
+                    }
+                }
+                else if(id.listaParams.get(i).type != listParamCall.get(i)){
+                    System.out.println("El tipo de los parametros no coincide");
+                }
+            }
+            return id.type;
+        }
+        return ctx.ID();
     }
 
     @Override public Object visitActualParamsAST(miParser.ActualParamsASTContext ctx) {
-        for (miParser.ExpressionContext c: ctx.expression())
-            this.visit(c);
-        return null;
+        listParamCall.clear();
+        for (int i = 0; i < ctx.expression().size() ; i++) {
+            listParamCall.add( (Type) this.visit(ctx.expression(i)));
+        }
+        ctx.cantParams = ctx.expression().size();
+        return ctx;
     }
     int cantImpErrArray;
     @Override public Object visitArrayLookupAST(miParser.ArrayLookupASTContext ctx) {

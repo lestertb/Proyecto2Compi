@@ -18,7 +18,13 @@ statement           : variableDeclaration PyComa                            #var
 
 block :   LLAIZQ (statement)* LLADER                                        #blockAST;
 functionDeclaration     :  type ID PIZQ (formalParams)? PDER block          #functionDeclarationAST;
-formalParams     : formalParam (COMA formalParam)*                          #formalParamsAST;
+
+
+formalParams
+locals [int cantParams=0]
+                 : formalParam (COMA formalParam)*                          #formalParamsAST;
+
+
 formalParam      : type ID                                                  #formalParamAST;
 whileStatement   : WHILE PIZQ expression PDER block                         #whileStatementAST;
 ifStatement      : IF PIZQ expression PDER block (ELSE block)?              #ifStatementAST;
@@ -58,7 +64,13 @@ allocationExpression    : NEW ID  PIZQ PDER                                 #all
 arrayAllocationExpression        : NEW simpleType PCIZQ expression PCDER    #arrayAllocationExpressionAST;
 subExpression    : PIZQ expression PDER                                     #subExpressionAST;
 functionCall     : ID PIZQ (actualParams)? PDER                             #functionCallAST;
-actualParams     : expression (COMA expression)*                            #actualParamsAST;
+
+
+actualParams
+locals [int cantParams=0]
+                  : expression (COMA expression)*                            #actualParamsAST;
+
+
 arrayLookup       : ID PCIZQ expression PCDER                               #arrayLookupAST;
 arrayLength       : ID POINT LENGTH                                         #arrayLengthAST;
 boolLiteral      : TRUE | FALSE                                             #boolLiteralAST;
