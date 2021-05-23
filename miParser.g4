@@ -77,6 +77,7 @@ boolLiteral      : TRUE | FALSE                                             #boo
 literal          : INTLITERAL                                               #intLAST
                     | REALLITERAL                                           #realLAST
                     | boolLiteral                                           #boolLAST
-                    | STRINGLITERAL                                         #stringLAST;
+                    | STRINGLITERAL                                         #stringLAST
+                    | CHARLITERAL                                           #charLAST;
 
 

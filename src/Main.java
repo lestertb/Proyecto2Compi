@@ -1,4 +1,5 @@
 import AC.MiVisitor;
+import INTPR.MiInterprete;
 import generated.*;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -28,11 +29,14 @@ public class Main {
             System.out.println("Compilación Terminada!!\n");
             java.util.concurrent.Future<JFrame> treeGUI = org.antlr.v4.gui.Trees.inspect(tree, parser);
             //treeGUI.get().setVisible(true);
-
-
             MiVisitor mv = new MiVisitor();
             mv.visit(tree);
 
+            //TODO: Recuerde hacer el if de que si no hay errores en MiVisitor deje correr el interprete para WEB
+            //if (mv.Errors.equals("")){
+                MiInterprete inter = new MiInterprete();
+                inter.visit(tree);
+            //}
         }
         catch (IOException e) {
             e.printStackTrace();

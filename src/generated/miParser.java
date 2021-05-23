@@ -22,7 +22,8 @@ public class miParser extends Parser {
 		ADDITIVEOP=16, MULTIPLICATEOP=17, BOOLEAN=18, CHAR=19, INT=20, STRING=21, 
 		TRUE=22, FALSE=23, SUM=24, SUB=25, OR=26, MUL=27, DIV=28, AND=29, INTERROGATION=30, 
 		UNARY=31, IF=32, ELSE=33, WHILE=34, RETURN=35, CLASS=36, PRINT=37, NEW=38, 
-		LENGTH=39, ID=40, INTLITERAL=41, REALLITERAL=42, STRINGLITERAL=43, WS=44;
+		LENGTH=39, ID=40, INTLITERAL=41, REALLITERAL=42, STRINGLITERAL=43, CHARLITERAL=44, 
+		WS=45;
 	public static final int
 		RULE_program = 0, RULE_statement = 1, RULE_block = 2, RULE_functionDeclaration = 3, 
 		RULE_formalParams = 4, RULE_formalParam = 5, RULE_whileStatement = 6, 
@@ -64,7 +65,7 @@ public class miParser extends Parser {
 			"ADDITIVEOP", "MULTIPLICATEOP", "BOOLEAN", "CHAR", "INT", "STRING", "TRUE", 
 			"FALSE", "SUM", "SUB", "OR", "MUL", "DIV", "AND", "INTERROGATION", "UNARY", 
 			"IF", "ELSE", "WHILE", "RETURN", "CLASS", "PRINT", "NEW", "LENGTH", "ID", 
-			"INTLITERAL", "REALLITERAL", "STRINGLITERAL", "WS"
+			"INTLITERAL", "REALLITERAL", "STRINGLITERAL", "CHARLITERAL", "WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -2185,7 +2186,7 @@ public class miParser extends Parser {
 			setState(263);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PIZQ) | (1L << TRUE) | (1L << FALSE) | (1L << UNARY) | (1L << NEW) | (1L << ID) | (1L << INTLITERAL) | (1L << REALLITERAL) | (1L << STRINGLITERAL))) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PIZQ) | (1L << TRUE) | (1L << FALSE) | (1L << UNARY) | (1L << NEW) | (1L << ID) | (1L << INTLITERAL) | (1L << REALLITERAL) | (1L << STRINGLITERAL) | (1L << CHARLITERAL))) != 0)) {
 				{
 				setState(262);
 				actualParams();
@@ -2436,6 +2437,15 @@ public class miParser extends Parser {
 			super.copyFrom(ctx);
 		}
 	}
+	public static class CharLASTContext extends LiteralContext {
+		public TerminalNode CHARLITERAL() { return getToken(miParser.CHARLITERAL, 0); }
+		public CharLASTContext(LiteralContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof miParserVisitor ) return ((miParserVisitor<? extends T>)visitor).visitCharLAST(this);
+			else return visitor.visitChildren(this);
+		}
+	}
 	public static class RealLASTContext extends LiteralContext {
 		public TerminalNode REALLITERAL() { return getToken(miParser.REALLITERAL, 0); }
 		public RealLASTContext(LiteralContext ctx) { copyFrom(ctx); }
@@ -2479,7 +2489,7 @@ public class miParser extends Parser {
 		LiteralContext _localctx = new LiteralContext(_ctx, getState());
 		enterRule(_localctx, 62, RULE_literal);
 		try {
-			setState(290);
+			setState(291);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case INTLITERAL:
@@ -2515,6 +2525,14 @@ public class miParser extends Parser {
 				match(STRINGLITERAL);
 				}
 				break;
+			case CHARLITERAL:
+				_localctx = new CharLASTContext(_localctx);
+				enterOuterAlt(_localctx, 5);
+				{
+				setState(290);
+				match(CHARLITERAL);
+				}
+				break;
 			default:
 				throw new NoViableAltException(this);
 			}
@@ -2531,7 +2549,7 @@ public class miParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3.\u0127\4\2\t\2\4"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3/\u0128\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -2552,16 +2570,16 @@ public class miParser extends Parser {
 		"\u00f3\n\30\f\30\16\30\u00f6\13\30\3\31\3\31\3\31\3\31\3\31\3\32\3\32"+
 		"\3\32\3\32\3\32\3\32\3\33\3\33\3\33\3\33\3\34\3\34\3\34\5\34\u010a\n\34"+
 		"\3\34\3\34\3\35\3\35\3\35\7\35\u0111\n\35\f\35\16\35\u0114\13\35\3\36"+
-		"\3\36\3\36\3\36\3\36\3\37\3\37\3\37\3\37\3 \3 \3!\3!\3!\3!\5!\u0125\n"+
-		"!\3!\2\2\"\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\66"+
-		"8:<>@\2\3\3\2\30\31\2\u012f\2E\3\2\2\2\4^\3\2\2\2\6`\3\2\2\2\bi\3\2\2"+
-		"\2\nr\3\2\2\2\fz\3\2\2\2\16}\3\2\2\2\20\u0083\3\2\2\2\22\u008c\3\2\2\2"+
-		"\24\u008f\3\2\2\2\26\u0092\3\2\2\2\30\u009d\3\2\2\2\32\u00a5\3\2\2\2\34"+
-		"\u00ae\3\2\2\2\36\u00b4\3\2\2\2 \u00b6\3\2\2\2\"\u00ba\3\2\2\2$\u00c2"+
+		"\3\36\3\36\3\36\3\36\3\37\3\37\3\37\3\37\3 \3 \3!\3!\3!\3!\3!\5!\u0126"+
+		"\n!\3!\2\2\"\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64"+
+		"\668:<>@\2\3\3\2\30\31\2\u0131\2E\3\2\2\2\4^\3\2\2\2\6`\3\2\2\2\bi\3\2"+
+		"\2\2\nr\3\2\2\2\fz\3\2\2\2\16}\3\2\2\2\20\u0083\3\2\2\2\22\u008c\3\2\2"+
+		"\2\24\u008f\3\2\2\2\26\u0092\3\2\2\2\30\u009d\3\2\2\2\32\u00a5\3\2\2\2"+
+		"\34\u00ae\3\2\2\2\36\u00b4\3\2\2\2 \u00b6\3\2\2\2\"\u00ba\3\2\2\2$\u00c2"+
 		"\3\2\2\2&\u00c9\3\2\2\2(\u00d1\3\2\2\2*\u00d9\3\2\2\2,\u00ee\3\2\2\2."+
 		"\u00f0\3\2\2\2\60\u00f7\3\2\2\2\62\u00fc\3\2\2\2\64\u0102\3\2\2\2\66\u0106"+
 		"\3\2\2\28\u010d\3\2\2\2:\u0115\3\2\2\2<\u011a\3\2\2\2>\u011e\3\2\2\2@"+
-		"\u0124\3\2\2\2BD\5\4\3\2CB\3\2\2\2DG\3\2\2\2EC\3\2\2\2EF\3\2\2\2F\3\3"+
+		"\u0125\3\2\2\2BD\5\4\3\2CB\3\2\2\2DG\3\2\2\2EC\3\2\2\2EF\3\2\2\2F\3\3"+
 		"\2\2\2GE\3\2\2\2HI\5\32\16\2IJ\7\3\2\2J_\3\2\2\2KL\5\26\f\2LM\7\3\2\2"+
 		"M_\3\2\2\2NO\5\"\22\2OP\7\3\2\2P_\3\2\2\2QR\5$\23\2RS\7\3\2\2S_\3\2\2"+
 		"\2TU\5\24\13\2UV\7\3\2\2V_\3\2\2\2W_\5\20\t\2X_\5\16\b\2YZ\5\22\n\2Z["+
@@ -2623,11 +2641,12 @@ public class miParser extends Parser {
 		"\2\2\u0112\u0113\3\2\2\2\u01139\3\2\2\2\u0114\u0112\3\2\2\2\u0115\u0116"+
 		"\7*\2\2\u0116\u0117\7\17\2\2\u0117\u0118\5&\24\2\u0118\u0119\7\20\2\2"+
 		"\u0119;\3\2\2\2\u011a\u011b\7*\2\2\u011b\u011c\7\6\2\2\u011c\u011d\7)"+
-		"\2\2\u011d=\3\2\2\2\u011e\u011f\t\2\2\2\u011f?\3\2\2\2\u0120\u0125\7+"+
-		"\2\2\u0121\u0125\7,\2\2\u0122\u0125\5> \2\u0123\u0125\7-\2\2\u0124\u0120"+
-		"\3\2\2\2\u0124\u0121\3\2\2\2\u0124\u0122\3\2\2\2\u0124\u0123\3\2\2\2\u0125"+
-		"A\3\2\2\2\27E^dmw\u008a\u0098\u00a1\u00a9\u00ae\u00b4\u00bd\u00ce\u00d6"+
-		"\u00de\u00e5\u00ee\u00f4\u0109\u0112\u0124";
+		"\2\2\u011d=\3\2\2\2\u011e\u011f\t\2\2\2\u011f?\3\2\2\2\u0120\u0126\7+"+
+		"\2\2\u0121\u0126\7,\2\2\u0122\u0126\5> \2\u0123\u0126\7-\2\2\u0124\u0126"+
+		"\7.\2\2\u0125\u0120\3\2\2\2\u0125\u0121\3\2\2\2\u0125\u0122\3\2\2\2\u0125"+
+		"\u0123\3\2\2\2\u0125\u0124\3\2\2\2\u0126A\3\2\2\2\27E^dmw\u008a\u0098"+
+		"\u00a1\u00a9\u00ae\u00b4\u00bd\u00ce\u00d6\u00de\u00e5\u00ee\u00f4\u0109"+
+		"\u0112\u0125";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

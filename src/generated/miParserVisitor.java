@@ -408,4 +408,11 @@ public interface miParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitStringLAST(miParser.StringLASTContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code charLAST}
+	 * labeled alternative in {@link miParser#literal}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCharLAST(miParser.CharLASTContext ctx);
 }
