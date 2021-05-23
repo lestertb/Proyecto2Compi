@@ -35,14 +35,15 @@ PCDER: ']';
  CHAR:'char';
  INT:'int';
  STRING: 'string';
+ REAL: 'real';
  TRUE: 'true';
  FALSE:'false';
  SUM: '+';
  SUB: '-';
- OR: 'or';
+ OR: '||';
  MUL: '*';
  DIV: '/';
- AND: 'and';
+ AND: '&&';
  INTERROGATION:'!';
 UNARY: SUM | SUB | INTERROGATION;
 

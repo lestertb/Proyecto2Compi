@@ -1,0 +1,17 @@
+int x;
+
+string y = "a" + "b";
+
+x = 10 + 2 * (1+1);
+
+boolean bol;
+
+print ((5 > 3) && ("a" != "a"));
+
+print x;
+
+bol = true;
+
+print bol;
+
+print "hola nazi";

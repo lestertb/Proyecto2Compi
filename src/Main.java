@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.tree.*;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.sql.SQLOutput;
 import java.util.concurrent.ExecutionException;
 
 
@@ -33,10 +34,11 @@ public class Main {
             mv.visit(tree);
 
             //TODO: Recuerde hacer el if de que si no hay errores en MiVisitor deje correr el interprete para WEB
-            //if (mv.Errors.equals("")){
+            if (mv.errores.equals("")){
                 MiInterprete inter = new MiInterprete();
                 inter.visit(tree);
-            //}
+            }else
+                System.out.println(mv.errores);
         }
         catch (IOException e) {
             e.printStackTrace();

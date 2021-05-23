@@ -214,6 +214,13 @@ public interface miParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStringSTAST(miParser.StringSTASTContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code realSTAST}
+	 * labeled alternative in {@link miParser#simpleType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitRealSTAST(miParser.RealSTASTContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code arrayTypeAST}
 	 * labeled alternative in {@link miParser#arrayType}.
 	 * @param ctx the parse tree

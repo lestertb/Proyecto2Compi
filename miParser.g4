@@ -40,7 +40,8 @@ type       : simpleType                                                     #sim
 simpleType : BOOLEAN                                                        #booleanSTAST
 	       | CHAR                                                           #charSTAST
 	       | INT                                                            #intSTAST
-	       | STRING                                                         #stringSTAST;
+	       | STRING                                                         #stringSTAST
+	       | REAL                                                           #realSTAST;
 
 arrayType         : simpleType PCIZQ PCDER                                  #arrayTypeAST;
 assignment        : ID (POINT ID)? ASSIGN expression                        #assignmentAST;

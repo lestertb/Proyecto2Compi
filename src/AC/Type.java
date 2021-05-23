@@ -6,6 +6,8 @@ public enum Type {
     FALSE,
     INT,
     STRING,
+    CHAR,
+    REAL,
     INTARREGLO,
     STRINGARREGLO,
     BOOLEANARREGLO,
