@@ -1,17 +1,16 @@
-int x;
 
-string y = "a" + "b";
 
-x = 10 + 2 * (1+1);
+int[] x;
 
-boolean bol;
+x = new int[3];
 
-print ((5 > 3) && ("a" != "a"));
+x[2] = 7;
 
-print x;
+print x.length;
 
-bol = true;
+int y = 6;
 
-print bol;
+x[2] = 2*y;
 
-print "hola nazi";
+print x[2];
+

@@ -128,16 +128,11 @@ public class MiInterprete extends miParserBaseVisitor {
         Type tipo = (Type) visit(ctx.type());
         if (ctx.expression() != null){
             Object valor = visit(ctx.expression());
-            if( tipo == Type.INT)
+            if( tipo == Type.INT || tipo == Type.STRING || tipo == Type.BOOLEAN || tipo == Type.CHAR ||  tipo == Type.REAL)
                 this.almacenDatos.agregarInstancia(ctx.ID().getText(), valor);
-            else if ( tipo == Type.STRING)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), valor);
-            else if ( tipo == Type.BOOLEAN)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), valor);
-            else if ( tipo == Type.CHAR)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), valor);
-            else if ( tipo == Type.REAL)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), valor);
+            if ( tipo == Type.STRINGARREGLO || tipo == Type.INTARREGLO || tipo == Type.BOOLEANARREGLO
+                    || tipo == Type.CHARARREGLO || tipo == Type.REALARREGLO)
+                this.almacenDatos.agregarInstancia(ctx.ID().getText(), new Object[(int) valor]);
         }else {
             if( tipo == Type.INT)
                 this.almacenDatos.agregarInstancia(ctx.ID().getText(), 0);
@@ -149,6 +144,9 @@ public class MiInterprete extends miParserBaseVisitor {
                 this.almacenDatos.agregarInstancia(ctx.ID().getText(), '\u0000');
             else if ( tipo == Type.REAL)
                 this.almacenDatos.agregarInstancia(ctx.ID().getText(), 0.0);
+            else if (tipo == Type.INTARREGLO || tipo == Type.STRINGARREGLO || tipo == Type.BOOLEANARREGLO
+                    || tipo == Type.CHARARREGLO || tipo == Type.REALARREGLO)
+                this.almacenDatos.agregarInstancia(ctx.ID().getText(), null);
         }
         return ctx.ID().getText();
     }
@@ -186,20 +184,35 @@ public class MiInterprete extends miParserBaseVisitor {
             return Type.STRINGARREGLO;
         if(ctx.getText().equals("boolean[]"))
             return Type.BOOLEANARREGLO;
-        return null;
+        if(ctx.getText().equals("char[]"))
+            return Type.CHARARREGLO;
+        if(ctx.getText().equals("real[]"))
+            return Type.REALARREGLO;
+        return ctx.getText();
     }
 
     @Override
     public Object visitAssignmentAST(miParser.AssignmentASTContext ctx) {
-        String nombre = ctx.ID(0).getText();
-        Object valor = visit(ctx.expression());
-        almacenDatos.setInstancia(nombre,valor);
+        if (ctx.expression().getText().contains("new") && ctx.expression().getText().contains("[")){
+            almacenDatos.setInstancia(ctx.ID(0).getText(), new Object[(int) visit(ctx.expression())]);
+        }else{
+            String nombre = ctx.ID(0).getText();
+            Object valor = visit(ctx.expression());
+            almacenDatos.setInstancia(nombre,valor);
+        }
         return null;
     }
 
     @Override
     public Object visitArrayAssignmentAST(miParser.ArrayAssignmentASTContext ctx) {
-        return super.visitArrayAssignmentAST(ctx);
+        Instancia inst = almacenDatos.getInstancia(ctx.ID().getText());
+        Object[] test = (Object[]) inst.valor;
+        try {
+            test[(int) visit(ctx.expression(0))] = visit(ctx.expression(1));
+        }catch (ArrayIndexOutOfBoundsException AE){
+            System.out.println("Error, indice del array " + "\""+ inst.nombre + "\" " +"fuera de rango");
+        }
+        return null;
     }
 
     @Override
@@ -314,7 +327,7 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitArrayAllocationExpressionFAST(miParser.ArrayAllocationExpressionFASTContext ctx) {
-        return super.visitArrayAllocationExpressionFAST(ctx);
+        return this.visit(ctx.arrayAllocationExpression());
     }
 
     @Override
@@ -339,7 +352,7 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitArrayAllocationExpressionAST(miParser.ArrayAllocationExpressionASTContext ctx) {
-        return super.visitArrayAllocationExpressionAST(ctx);
+        return this.visit(ctx.expression());
     }
 
     @Override
@@ -359,12 +372,16 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitArrayLookupAST(miParser.ArrayLookupASTContext ctx) {
-        return super.visitArrayLookupAST(ctx);
+        Instancia inst = almacenDatos.getInstancia(ctx.ID().getText());
+        Object[] test = (Object[]) inst.valor;
+        return test[(int) visit(ctx.expression())];
     }
 
     @Override
     public Object visitArrayLengthAST(miParser.ArrayLengthASTContext ctx) {
-        return super.visitArrayLengthAST(ctx);
+        Instancia inst = almacenDatos.getInstancia(ctx.ID().getText());
+        Object[] test = (Object[]) inst.valor;
+        return test.length;
     }
 
     @Override

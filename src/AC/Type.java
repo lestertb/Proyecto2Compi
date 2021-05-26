@@ -11,5 +11,6 @@ public enum Type {
     INTARREGLO,
     STRINGARREGLO,
     BOOLEANARREGLO,
-    VOID
+    CHARARREGLO,
+    REALARREGLO
 }
