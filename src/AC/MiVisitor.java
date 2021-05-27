@@ -16,7 +16,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     List<ParamMethod> listParam = new ArrayList<ParamMethod>();
     List<Type> listParamCall = new ArrayList<Type>();
     public String errores = "";
-
+    Type tipoFuncion = null;
     public MiVisitor() {
         tabla = new TablaSimbolos();
         listClasses = new LinkedList<TablaSimbolosClass>();
@@ -60,7 +60,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             }
         }
         if (!exist)
-            errores += ("\n"+"\"" + returnExpr + "\"" + " No se reconoce");
+            errores += ("\n"+"\"" + returnExpr + "\"" + " No se reconoce\n");
         return this.visit(ctx.printStatement());
     }
 
@@ -84,7 +84,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             }
         }
         if (!exist)
-            errores += ("\n"+"\"" + returnExpr + "\"" + " No se reconoce");
+            errores += ("\n"+"\"" + returnExpr + "\"" + " No se reconoce\n");
         return this.visit(ctx.returnStatement());
     }
 
@@ -111,6 +111,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         Object attr = null;
         if (ctx.type() != null){
             attr = this.visit(ctx.type());
+            tipoFuncion = (Type) attr;
             if (attr == Type.INT || attr == Type.STRING || attr == Type.BOOLEAN){
                 tabla.insertarMethod(ctx.ID().getSymbol(),(Type) attr,ctx, listParam);
             }else
@@ -122,6 +123,11 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         this.visit(ctx.block());
         //tabla.imprimir();
         tabla.closeScope();
+
+        if(!ctx.block().getText().contains("return"))
+            errores += ("\n"+ "Las funciones requieren un return");
+
+        tipoFuncion = null;
         return ctx;
     }
 
@@ -155,7 +161,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
             }
         }
         if (!exist)
-            errores += ("\n"+"\"" + expre + "\"" + " No se reconoce");
+            errores += ("\n"+"\"" + expre + "\"" + " No se reconoce\n");
         this.visit(ctx.block(0));
         if (ctx.block(1) != null)
             this.visit(ctx.block(1));
@@ -163,7 +169,13 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
     }
 
     @Override public Object visitReturnStatementAST(miParser.ReturnStatementASTContext ctx) {
-        return  this.visit(ctx.expression());
+        Object expre = this.visit(ctx.expression());
+
+        if(expre == null)
+            errores += ("Error en el valor del retono");
+        else if (tipoFuncion != null && !tipoFuncion.equals(expre))
+            errores += ("Tipo del valor del return diferente al de la función");
+        return expre;
     }
 
     @Override public Object visitPrintStatementAST(miParser.PrintStatementASTContext ctx) {
@@ -591,7 +603,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
         Type exprType2 = null;
         Ident id = null;
         try { exprType = (Type) this.visit(ctx.expression(0)); }catch (Exception e){
-            errores += ("\n"+"\""+this.visit(ctx.expression(0))+"\": " + "No se reconoce");
+            errores += ("\n"+"\""+this.visit(ctx.expression(0))+"\": " + "No se reconoce\n");
         }
         id = tabla.buscar(ctx.ID().getText());
         for (int i = 1; i < ctx.expression().size(); i++) {
@@ -641,10 +653,10 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                         if (!existVarInClass2)
                             errores += ("\n"+"\"" + partVarInClassName + "\"" + " no se reconoce como variable de la instancia: " + partClassName);
                     }else
-                        errores += ("\n"+"\""+ctx.ID().getText()+"\": " + "No se reconoce");
+                        errores += ("\n"+"\""+ctx.ID().getText()+"\": " + "No se reconoce\n");
 
                 }catch (Exception e2){
-                    errores += ("\n"+"\""+this.visit(ctx.expression(i))+"\": " + "No se reconoce");
+                    errores += ("\n"+"\""+this.visit(ctx.expression(i))+"\": " + "No se reconoce\n");
                 }
 
             }
@@ -673,7 +685,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                 }else
                     errores += ("\n"+"\""+id.tok.getText()+"\": " + "No ha sido inicializado");
             }else
-                errores += ("\n"+"\""+ctx.ID().getText()+"\": " + "No se reconoce");
+                errores += ("\n"+"\""+ctx.ID().getText()+"\": " + "No se reconoce\n");
 
         }
         return ctx;
@@ -724,7 +736,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     catch (Exception e2){
                         cantImErr++;
                         errores += ("\n"+"Error en uso de operadores relacionales para: ( " + exprDiffType+ ", "+ exprDiffType2 + " )");
-                        errores += ("\n"+"Error: " + exprDiffType + ": No se reconoce");
+                        errores += ("\n"+"Error: " + exprDiffType + ": No se reconoce\n");
                         return exprDiffType;
                     }
                 }
@@ -735,7 +747,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     }catch (Exception e2){
                         if (cantImErr < 1)
                             errores += ("\n"+"Error en uso de operadores relacionales para: ( " + exprDiffType+ ", "+ exprDiffType2 + " )");
-                        errores += ("\n"+"Error: " + exprDiffType2 + ": No se reconoce");
+                        errores += ("\n"+"Error: " + exprDiffType2 + ": No se reconoce\n");
                         return exprDiffType2;
                     }
                 }
@@ -885,7 +897,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                         if (cantImp < 1) {
                             cantImp++;
                             errores += ("\n"+"Error en uso de operadores aditivos para: ( " + termDiffType + ", " + termDiffType2 + " )");
-                            errores += ("\n"+"Error, " + termDiffType + ": No se reconoce");
+                            errores += ("\n"+"Error, " + termDiffType + ": No se reconoce\n");
                         }
                         return termDiffType;
                     }
@@ -897,7 +909,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                     }catch (Exception e2){
                         if (cantImp < 1)
                             errores += ("\n"+"Error en uso de operadores aditivos para: ( " + termDiffType+ ", "+ termDiffType2 + " )");
-                        errores += ("\n"+"Error, " + termDiffType2 + ": No se reconoce");
+                        errores += ("\n"+"Error, " + termDiffType2 + ": No se reconoce\n");
                         return termDiffType2;
                     }
                 }
@@ -1127,7 +1139,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                             cantImpErrorT++;
                             cantImp3++;
                             errores += ("\n"+"Error en uso de operadores multiplicativos para: ( " + factDiffType+ ", "+ factDiffType2 + " )");
-                            errores += ("\n"+"Error, " + factDiffType + ": No se reconoce");
+                            errores += ("\n"+"Error, " + factDiffType + ": No se reconoce\n");
                             return factDiffType;
                         }
                     }
@@ -1144,7 +1156,7 @@ public class MiVisitor extends miParserBaseVisitor<Object> {
                             }
                             if(cantImpVE < 1) {
                                 cantImpVE++;
-                                errores += ("\n"+"Error, " + factDiffType2 + ": No se reconoce");
+                                errores += ("\n"+"Error, " + factDiffType2 + ": No se reconoce\n");
                                 return factDiffType2;
                             }
                         }

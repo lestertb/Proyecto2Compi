@@ -1,16 +1,8 @@
 
+int x = 1;
 
-int[] x;
+boolean f = false;
 
-x = new int[3];
-
-x[2] = 7;
-
-print x.length;
-
-int y = 6;
-
-x[2] = 2*y;
-
-print x[2];
-
+if( f == false){
+    print x;
+}

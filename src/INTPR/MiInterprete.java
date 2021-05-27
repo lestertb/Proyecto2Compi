@@ -5,6 +5,7 @@ import generated.miParser;
 import generated.miParserBaseVisitor;
 
 import java.util.Stack;
+import java.util.concurrent.ExecutionException;
 
 public class MiInterprete extends miParserBaseVisitor {
 
@@ -18,7 +19,12 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitProgramAST(miParser.ProgramASTContext ctx) {
-        return super.visitProgramAST(ctx);
+        almacenDatos.openScope();
+        for( miParser.StatementContext context : ctx.statement()) {
+            this.visit(context);
+        }
+        almacenDatos.closeScope();
+        return null;
     }
 
     @Override
@@ -79,17 +85,21 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitFunctionDeclarationAST(miParser.FunctionDeclarationASTContext ctx) {
-        return super.visitFunctionDeclarationAST(ctx);
+        almacenDatos.agregarInstancia(ctx.ID().getText(),null, ctx);
+        return null;
     }
 
     @Override
     public Object visitFormalParamsAST(miParser.FormalParamsASTContext ctx) {
-        return super.visitFormalParamsAST(ctx);
+        for (miParser.FormalParamContext param: ctx.formalParam()) {
+            almacenDatos.agregarInstancia((String) this.visit(param), pilaExpresiones.pop());
+        }
+        return null;
     }
 
     @Override
     public Object visitFormalParamAST(miParser.FormalParamASTContext ctx) {
-        return super.visitFormalParamAST(ctx);
+        return ctx.ID().getText();
     }
 
     @Override
@@ -99,12 +109,15 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitIfStatementAST(miParser.IfStatementASTContext ctx) {
+
+        System.out.println("hola");
         return super.visitIfStatementAST(ctx);
     }
 
     @Override
     public Object visitReturnStatementAST(miParser.ReturnStatementASTContext ctx) {
-        return super.visitReturnStatementAST(ctx);
+        pilaExpresiones.push(this.visit(ctx.expression()));
+        return null;
     }
 
     @Override
@@ -250,31 +263,122 @@ public class MiInterprete extends miParserBaseVisitor {
 
     private Object REOPERATOR(Object v1, Object v2, String op){
         Object result=null;
-        if (op.equals("<"))
-            result = ((Integer)v1) < ((Integer)v2);
-        else if (op.equals(">"))
-            result = ((Integer)v1) > ((Integer)v2);
-        else if (op.equals("=="))
-            result = (v1).equals(v2);
-        else if (op.equals("!="))
-            result = !(v1).equals(v2);
-        else if (op.equals("<="))
-            result = ((Integer)v1) <= ((Integer)v2);
-        else if (op.equals(">="))
-            result = ((Integer)v1) >= ((Integer)v2);
+        if (v1 != null && v2 != null){
+            if (op.equals("<")){
+                try {
+                    result = ((Integer)v1) < ((Integer)v2);
+                }catch (Exception e){
+                    try{
+                        result = ((Double)v1) < ((Double)v2);
+                    }catch (Exception e2){
+                        try {
+                            result = ((Integer)v1) < ((Double)v2);
+                        }catch (Exception e3){
+                            try {
+                                result = ((Double)v1) < ((Integer)v2);
+                            }catch (Exception ignored){}
+                        }
+                    }
+                }
+            }
+            else if (op.equals(">")){
+                try {
+                    result = ((Integer)v1) > ((Integer)v2);
+                }catch (Exception e){
+                    try{
+                        result = ((Double)v1) > ((Double)v2);
+                    }catch (Exception e2){
+                        try {
+                            result = ((Integer)v1) > ((Double)v2);
+                        }catch (Exception e3){
+                            try {
+                                result = ((Double)v1) > ((Integer)v2);
+                            }catch (Exception ignored){}
+                        }
+                    }
+                }
+            }
+            else if (op.equals("==")){
+                result = (v1).equals(v2);
+            }
+            else if (op.equals("!=")){
+                result = !(v1).equals(v2);
+            }
+            else if (op.equals("<=")){
+                try {
+                    result = ((Integer)v1) <= ((Integer)v2);
+                }catch (Exception e){
+                    try{
+                        result = ((Double)v1) <= ((Double)v2);
+                    }catch (Exception e2){
+                        try {
+                            result = ((Integer)v1) <= ((Double)v2);
+                        }catch (Exception e3){
+                            try {
+                                result = ((Double)v1) <= ((Integer)v2);
+                            }catch (Exception ignored){}
+                        }
+                    }
+                }
+            }
+            else if (op.equals(">=")){
+                try {
+                    result = ((Integer)v1) >= ((Integer)v2);
+                }catch (Exception e){
+                    try{
+                        result = ((Double)v1) >= ((Double)v2);
+                    }catch (Exception e2){
+                        try {
+                            result = ((Integer)v1) >= ((Double)v2);
+                        }catch (Exception e3){
+                            try {
+                                result = ((Double)v1) >= ((Integer)v2);
+                            }catch (Exception ignored){}
+                        }
+                    }
+                }
+            }
+        }
         return result;
     }
     private Object ADDITIVEOP(Object v1, Object v2, String op){
         Object result=null;
         if (op.equals("+")){
-            try{
+            try {
                 result = ((Integer)v1) + ((Integer)v2);
             }catch (Exception e){
-                result = v1 + ((String)v2);
+                try{
+                    result = ((Double)v1) + ((Double)v2);
+                }catch (Exception e2){
+                    try {
+                        result = ((Integer)v1) + ((Double)v2);
+                    }catch (Exception e3){
+                        try {
+                            result = ((Double)v1) + ((Integer)v2);
+                        }catch (Exception e4){
+                            result = v1 + ((String)v2);
+                        }
+                    }
+                }
             }
         }
-        else if (op.equals("-"))
-            result = ((Integer)v1) - ((Integer)v2);
+        else if (op.equals("-")){
+            try {
+                result = ((Integer)v1) - ((Integer)v2);
+            }catch (Exception e){
+                try{
+                    result = ((Double)v1) - ((Double)v2);
+                }catch (Exception e2){
+                    try {
+                        result = ((Integer)v1) - ((Double)v2);
+                    }catch (Exception e3){
+                        try {
+                            result = ((Double)v1) - ((Integer)v2);
+                        }catch (Exception ignored){}
+                    }
+                }
+            }
+        }
         else if (op.equals("||"))
             result = ((Boolean)v1) || ((Boolean)v2);
         return result;
@@ -282,13 +386,40 @@ public class MiInterprete extends miParserBaseVisitor {
     private Object MULTIPLICATEOP(Object v1, Object v2, String op){
         Object result=null;
         if (op.equals("*"))
-            result = ((Integer)v1) * ((Integer)v2);
-        else if (op.equals("/"))
+            try {
+                result = ((Integer)v1) * ((Integer)v2);
+            }catch (Exception e){
+                try{
+                    result = ((Double)v1) * ((Double)v2);
+                }catch (Exception e2){
+                    try {
+                        result = ((Integer)v1) * ((Double)v2);
+                    }catch (Exception e3){
+                        try {
+                            result = ((Double)v1) * ((Integer)v2);
+                        }catch (Exception ignored){}
+                    }
+                }
+            }
+        else if (op.equals("/")){
             try{
                 result = ((Integer)v1) / ((Integer)v2);
             }catch (ArithmeticException AE){
                 System.out.println("Arithmetic Exception: No se puede dividir por 0");
+            }catch (Exception e){
+                try{
+                    result = ((Double)v1) / ((Double)v2);
+                }catch (Exception e2){
+                    try {
+                        result = ((Integer)v1) / ((Double)v2);
+                    }catch (Exception e3){
+                        try {
+                            result = ((Double)v1) / ((Integer)v2);
+                        }catch (Exception ignored){}
+                    }
+                }
             }
+        }
         else if (op.equals("&&")){
             result = ((Boolean)v1) && ((Boolean)v2);
         }
@@ -307,7 +438,7 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitFunctionCallFAST(miParser.FunctionCallFASTContext ctx) {
-        return super.visitFunctionCallFAST(ctx);
+        return visit(ctx.functionCall());
     }
 
     @Override
@@ -362,12 +493,27 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitFunctionCallAST(miParser.FunctionCallASTContext ctx) {
-        return super.visitFunctionCallAST(ctx);
+        almacenDatos.openScope();
+        Instancia inst = almacenDatos.getInstancia(ctx.ID().getText());
+
+        if (ctx.actualParams() != null){
+            this.visit(ctx.actualParams());
+            visit(((miParser.FunctionDeclarationASTContext) inst.ctx).formalParams());
+        }
+
+        visit(((miParser.FunctionDeclarationASTContext) inst.ctx).block());
+
+        almacenDatos.closeScope();
+
+        return pilaExpresiones.pop();
     }
 
     @Override
     public Object visitActualParamsAST(miParser.ActualParamsASTContext ctx) {
-        return super.visitActualParamsAST(ctx);
+        for (int i = ctx.expression().size()-1; i >=0 ; i--) {
+            pilaExpresiones.push(this.visit(ctx.expression(i)));
+        }
+        return null;
     }
 
     @Override
@@ -380,8 +526,15 @@ public class MiInterprete extends miParserBaseVisitor {
     @Override
     public Object visitArrayLengthAST(miParser.ArrayLengthASTContext ctx) {
         Instancia inst = almacenDatos.getInstancia(ctx.ID().getText());
-        Object[] test = (Object[]) inst.valor;
-        return test.length;
+        try {
+            Object[] test = (Object[]) inst.valor;
+            return test.length;
+        }catch (Exception e){
+            assert inst != null;
+            String test2 = (String) inst.valor;
+            assert test2 != null;
+            return test2.length();
+        }
     }
 
     @Override
