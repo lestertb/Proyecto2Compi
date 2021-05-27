@@ -75,7 +75,10 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitBlockST(miParser.BlockSTContext ctx) {
-        return super.visitBlockST(ctx);
+        almacenDatos.openScope();
+        this.visit(ctx.block());
+        almacenDatos.closeScope();
+        return null;
     }
 
     @Override
@@ -109,9 +112,24 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitIfStatementAST(miParser.IfStatementASTContext ctx) {
-
-        System.out.println("hola");
-        return super.visitIfStatementAST(ctx);
+        try{
+            Boolean expre = (Boolean) this.visit(ctx.expression());
+            if (ctx.block(1) != null){
+                if (expre){
+                    this.visit(ctx.block(0));
+                }
+                else{
+                    this.visit(ctx.block(1));
+                }
+            }else{
+                if (expre){
+                    this.visit(ctx.block(0));
+                }
+            }
+        }catch (Exception e){
+            System.out.println("En el if solo se permite expresiones booleanas");
+        }
+        return null;
     }
 
     @Override

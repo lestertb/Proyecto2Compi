@@ -1,8 +1,37 @@
+int[] pepito;
+int cant;
 
-int x = 1;
+pepito = new int[5];
 
-boolean f = false;
+pepito[4] = 7;
 
-if( f == false){
-    print x;
+int imprimir(string letra, int cant){
+    cant = cant + pepito[4];
+    print cant;
+    return cant;
 }
+
+{
+    print imprimir("d",pepito[4]) + pepito[4]+2;
+    int h = 5;
+    print cant;
+}
+
+if(8<10){
+    print "carlitos";
+    int marga = 5;
+    cant = 18;
+
+    {
+        int h = 999000;
+    }
+
+    print "-------";
+    print h;
+    print "-------";
+
+}else{
+    print "viva saprissa";
+}
+
+print cant;
