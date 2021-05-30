@@ -1,37 +1,10 @@
-int[] pepito;
-int cant;
+int x = 0;
 
-pepito = new int[5];
+print "Antes";
 
-pepito[4] = 7;
-
-int imprimir(string letra, int cant){
-    cant = cant + pepito[4];
-    print cant;
-    return cant;
+while(x < 5){
+    x = x + 1;
+    print x;
 }
 
-{
-    print imprimir("d",pepito[4]) + pepito[4]+2;
-    int h = 5;
-    print cant;
-}
-
-if(8<10){
-    print "carlitos";
-    int marga = 5;
-    cant = 18;
-
-    {
-        int h = 999000;
-    }
-
-    print "-------";
-    print h;
-    print "-------";
-
-}else{
-    print "viva saprissa";
-}
-
-print cant;
+print "Despues";

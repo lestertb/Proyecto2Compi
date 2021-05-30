@@ -4,6 +4,7 @@ import AC.Type;
 import generated.miParser;
 import generated.miParserBaseVisitor;
 
+import javax.xml.transform.Source;
 import java.util.Stack;
 import java.util.concurrent.ExecutionException;
 
@@ -107,7 +108,14 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitWhileStatementAST(miParser.WhileStatementASTContext ctx) {
-        return super.visitWhileStatementAST(ctx);
+        try{
+            while((Boolean) this.visit(ctx.expression())){
+                this.visit(ctx.block());
+            }
+        }catch (Exception e){
+            System.out.println("La expresión no se permite en el while");
+        }
+        return null;
     }
 
     @Override

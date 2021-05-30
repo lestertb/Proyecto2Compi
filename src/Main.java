@@ -31,7 +31,7 @@ public class Main {
             java.util.concurrent.Future<JFrame> treeGUI = org.antlr.v4.gui.Trees.inspect(tree, parser);
             //treeGUI.get().setVisible(true);
             MiVisitor mv = new MiVisitor();
-            mv.visit(tree);
+            //mv.visit(tree);
 
             //TODO: Recuerde hacer el if de que si no hay errores en MiVisitor deje correr el interprete para WEB
             if (mv.errores.equals("")){
