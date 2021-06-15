@@ -5,6 +5,7 @@ import generated.miParser;
 import generated.miParserBaseVisitor;
 
 import javax.xml.transform.Source;
+import java.nio.charset.StandardCharsets;
 import java.util.Stack;
 import java.util.concurrent.ExecutionException;
 
@@ -154,38 +155,66 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitClassDeclarationAST(miParser.ClassDeclarationASTContext ctx) {
-        return super.visitClassDeclarationAST(ctx);
+        this.almacenDatos.agregarInstancia(ctx.ID().getText(),null,ctx);
+        return null;
     }
 
     @Override
     public Object visitClassVariableDeclarationAST(miParser.ClassVariableDeclarationASTContext ctx) {
-        return super.visitClassVariableDeclarationAST(ctx);
+        Type tipo = (Type) visit(ctx.simpleType());
+        if (ctx.expression() != null){
+            Object valor = visit(ctx.expression());
+            if( tipo == Type.INT || tipo == Type.STRING || tipo == Type.BOOLEAN || tipo == Type.CHAR ||  tipo == Type.REAL)
+                this.almacenDatos.agregarInstancia(pilaExpresiones.pop() + "." +ctx.ID().getText(), valor);
+        }else {
+            if( tipo == Type.INT)
+                this.almacenDatos.agregarInstancia(pilaExpresiones.pop() + "." +ctx.ID().getText(), 0);
+            else if ( tipo == Type.STRING)
+                this.almacenDatos.agregarInstancia(pilaExpresiones.pop() + "." +ctx.ID().getText(), "");
+            else if ( tipo == Type.BOOLEAN)
+                this.almacenDatos.agregarInstancia(pilaExpresiones.pop() + "." +ctx.ID().getText(), false);
+            else if ( tipo == Type.CHAR)
+                this.almacenDatos.agregarInstancia(pilaExpresiones.pop() + "." +ctx.ID().getText(), '\u0000');
+            else if ( tipo == Type.REAL)
+                this.almacenDatos.agregarInstancia(pilaExpresiones.pop() + "." +ctx.ID().getText(), 0.0);
+        }
+        return null;
     }
 
     @Override
     public Object visitVariableDeclarationAST(miParser.VariableDeclarationASTContext ctx) {
-        Type tipo = (Type) visit(ctx.type());
-        if (ctx.expression() != null){
-            Object valor = visit(ctx.expression());
-            if( tipo == Type.INT || tipo == Type.STRING || tipo == Type.BOOLEAN || tipo == Type.CHAR ||  tipo == Type.REAL)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), valor);
-            if ( tipo == Type.STRINGARREGLO || tipo == Type.INTARREGLO || tipo == Type.BOOLEANARREGLO
-                    || tipo == Type.CHARARREGLO || tipo == Type.REALARREGLO)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), new Object[(int) valor]);
-        }else {
-            if( tipo == Type.INT)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), 0);
-            else if ( tipo == Type.STRING)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), "");
-            else if ( tipo == Type.BOOLEAN)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), false);
-            else if ( tipo == Type.CHAR)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), '\u0000');
-            else if ( tipo == Type.REAL)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), 0.0);
-            else if (tipo == Type.INTARREGLO || tipo == Type.STRINGARREGLO || tipo == Type.BOOLEANARREGLO
-                    || tipo == Type.CHARARREGLO || tipo == Type.REALARREGLO)
-                this.almacenDatos.agregarInstancia(ctx.ID().getText(), null);
+        try {
+            Type tipo = (Type) visit(ctx.type());
+            if (ctx.expression() != null){
+                Object valor = visit(ctx.expression());
+                if( tipo == Type.INT || tipo == Type.STRING || tipo == Type.BOOLEAN || tipo == Type.CHAR ||  tipo == Type.REAL)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), valor);
+                if ( tipo == Type.STRINGARREGLO || tipo == Type.INTARREGLO || tipo == Type.BOOLEANARREGLO
+                        || tipo == Type.CHARARREGLO || tipo == Type.REALARREGLO)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), new Object[(int) valor]);
+            }else {
+                if( tipo == Type.INT)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), 0);
+                else if ( tipo == Type.STRING)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), "");
+                else if ( tipo == Type.BOOLEAN)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), false);
+                else if ( tipo == Type.CHAR)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), '\u0000');
+                else if ( tipo == Type.REAL)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), 0.0);
+                else if (tipo == Type.INTARREGLO || tipo == Type.STRINGARREGLO || tipo == Type.BOOLEANARREGLO
+                        || tipo == Type.CHARARREGLO || tipo == Type.REALARREGLO)
+                    this.almacenDatos.agregarInstancia(ctx.ID().getText(), null);
+            }
+        }catch (Exception e){
+            if (ctx.expression().getText().contains("new")){
+                Instancia inst = this.almacenDatos.getInstancia(ctx.type().getText());
+                for (int i = 0; i <((((miParser.ClassDeclarationASTContext)inst.ctx).classVariableDeclaration().size())); i++) {
+                    pilaExpresiones.push(ctx.ID().getText());
+                    this.visit(((miParser.ClassDeclarationASTContext)inst.ctx).classVariableDeclaration(i));
+                }
+            }
         }
         return ctx.ID().getText();
     }
@@ -459,7 +488,10 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitIdFAST(miParser.IdFASTContext ctx) {
-        return (almacenDatos.getInstancia(ctx.ID(0).getText())).valor;
+        if (ctx.ID(1)!= null)
+            return (almacenDatos.getInstancia(ctx.ID(0).getText() +"."+ctx.ID(1).getText())).valor;
+        else
+            return (almacenDatos.getInstancia(ctx.ID(0).getText())).valor;
     }
 
     @Override
@@ -519,19 +551,38 @@ public class MiInterprete extends miParserBaseVisitor {
 
     @Override
     public Object visitFunctionCallAST(miParser.FunctionCallASTContext ctx) {
-        almacenDatos.openScope();
-        Instancia inst = almacenDatos.getInstancia(ctx.ID().getText());
+        if(ctx.ID().getText().equals("chr")){
+            try{
+                this.visit(ctx.actualParams());
+                int asciiValue = (Integer) (pilaExpresiones.pop());
+                return (char)asciiValue;
+            } catch (Exception e){
+                System.out.println("-> " + " La función "+"\"chr\""+" solo recibe valores enteros");
+                return null;
+            }
+        }else if (ctx.ID().getText().equals("ord")){
+            try{
+                this.visit(ctx.actualParams());
+                return (int) ((Character) pilaExpresiones.pop());
+            } catch (Exception e){
+                System.out.println("-> " + " La función "+ "\"ord\"" +" solo recibe un carácter");
+                return null;
+            }
+        }else{
+            almacenDatos.openScope();
+            Instancia inst = almacenDatos.getInstancia(ctx.ID().getText());
 
-        if (ctx.actualParams() != null){
-            this.visit(ctx.actualParams());
-            visit(((miParser.FunctionDeclarationASTContext) inst.ctx).formalParams());
+            if (ctx.actualParams() != null){
+                this.visit(ctx.actualParams());
+                visit(((miParser.FunctionDeclarationASTContext) inst.ctx).formalParams());
+            }
+
+            visit(((miParser.FunctionDeclarationASTContext) inst.ctx).block());
+
+            almacenDatos.closeScope();
+
+            return pilaExpresiones.pop();
         }
-
-        visit(((miParser.FunctionDeclarationASTContext) inst.ctx).block());
-
-        almacenDatos.closeScope();
-
-        return pilaExpresiones.pop();
     }
 
     @Override
